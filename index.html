@@ -11,6 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&display=swap" rel="stylesheet">
+<script>document.documentElement.classList.add("js");</script>
 <style>
   :root {
     color-scheme: light;
@@ -51,6 +52,7 @@
     color: var(--ink);
     font: 400 1.0625rem/1.6 var(--body);
     padding-bottom: calc(170px + env(safe-area-inset-bottom));
+    overflow-x: clip;
     -webkit-tap-highlight-color: transparent;
   }
   :focus-visible { outline: 3px solid var(--teal); outline-offset: 2px; }
@@ -319,18 +321,302 @@
 
   .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
+  /* ---------- Hero animation ---------- */
+  .hero { position: relative; }
+  .hero::before, .hero::after {
+    content: ""; position: absolute; z-index: -1; pointer-events: none;
+    border-radius: 50%;
+    animation: drift 18s ease-in-out infinite alternate;
+  }
+  .hero::before {
+    width: 34rem; height: 34rem; right: -14rem; top: -12rem;
+    background: radial-gradient(circle, color-mix(in srgb, var(--signal) 42%, transparent), transparent 66%);
+  }
+  .hero::after {
+    width: 26rem; height: 26rem; left: -14rem; top: 10rem;
+    background: radial-gradient(circle, color-mix(in srgb, var(--teal) 26%, transparent), transparent 66%);
+    animation-duration: 23s; animation-direction: alternate-reverse;
+  }
+  @keyframes drift { to { transform: translate(-5rem, 4rem) scale(1.18); } }
+
+  .hero .hl {
+    background: linear-gradient(var(--signal), var(--signal)) no-repeat 0 92% / 100% .26em;
+  }
+  .js .hero h1 .w {
+    display: inline-block;
+    animation: rise .8s cubic-bezier(.2, .7, .2, 1) both;
+    animation-delay: calc(var(--i) * 70ms + 80ms);
+  }
+  .js .hero h1 .hl {
+    animation: rise .8s cubic-bezier(.2, .7, .2, 1) both, hl .9s cubic-bezier(.6, 0, .2, 1) both;
+    animation-delay: calc(var(--i) * 70ms + 80ms), 1s;
+  }
+  .js .hero .lede, .js .hero .hint, .js .hero-art { animation: rise .9s cubic-bezier(.2, .7, .2, 1) both; }
+  .js .hero .lede { animation-delay: .55s; }
+  .js .hero .hint { animation-delay: .7s; }
+  .js .hero-art { animation-delay: .85s; }
+  @keyframes rise { from { opacity: 0; transform: translateY(.5em) rotate(1.5deg); } }
+  @keyframes hl { from { background-size: 0% .26em; } }
+
+  /* Mini phone that shows the autopilot at work */
+  .hero-art { width: 170px; margin: 40px auto 0; }
+  @media (min-width: 76rem) {
+    .hero-art { position: absolute; left: calc(100% + 2rem); top: 80px; width: 200px; margin: 0; }
+  }
+  .phone {
+    aspect-ratio: 9 / 18.5;
+    padding: 9px;
+    border-radius: 30px;
+    background: var(--ink);
+    box-shadow: var(--shadow);
+    animation: float 6s ease-in-out infinite;
+  }
+  @keyframes float { 50% { transform: translateY(-10px) rotate(-1.5deg); } }
+  .phone-screen { position: relative; height: 100%; overflow: hidden; border-radius: 22px; background: var(--surface); }
+  .mini-page { animation: miniscroll 16s linear infinite; }
+  @keyframes miniscroll { to { transform: translateY(-50%); } }
+  .mini-block { display: grid; gap: 8px; padding: 16px 13px 8px; }
+  .mini-block i { display: block; height: 6px; border-radius: 3px; background: var(--line); }
+  .mini-block i.h { height: 14px; width: 78%; background: var(--ink); opacity: .85; }
+  .mini-block i.short { width: 58%; }
+  .mini-block img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 9px; }
+  .mini-tabs { display: flex; gap: 4px; }
+  .mini-tabs b { flex: 1; height: 13px; border-radius: 4px; background: var(--line); }
+  .mini-tabs b:first-child { background: var(--ink); }
+  .mini-finger {
+    position: absolute; left: 58%; top: 52%;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: color-mix(in srgb, var(--signal) 85%, transparent);
+    border: 2px solid var(--signal-ink);
+    animation: minitap 5s ease-in-out infinite;
+  }
+  .mini-finger::after {
+    content: ""; position: absolute; inset: -2px; border-radius: 50%;
+    border: 2px solid var(--signal); opacity: 0;
+    animation: miniripple 5s ease-out infinite;
+  }
+  @keyframes minitap {
+    0%, 100% { transform: translate(0, 0); }
+    25%, 35% { transform: translate(-46px, -70px); }
+    30% { transform: translate(-46px, -70px) scale(.72); }
+    60%, 70% { transform: translate(18px, 46px); }
+    65% { transform: translate(18px, 46px) scale(.72); }
+  }
+  @keyframes miniripple {
+    0%, 29% { opacity: 0; transform: scale(1); }
+    30% { opacity: .9; transform: scale(1); }
+    42% { opacity: 0; transform: scale(2.4); }
+    64% { opacity: 0; transform: scale(1); }
+    65% { opacity: .9; }
+    77%, 100% { opacity: 0; transform: scale(2.4); }
+  }
+
+  /* Start button invites a tap while idle */
+  .start[aria-pressed="false"] { animation: invite 2.6s ease-out infinite; }
+  @keyframes invite {
+    0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--signal) 70%, transparent); }
+    70%, 100% { box-shadow: 0 0 0 10px transparent; }
+  }
+
+  /* ---------- Section numbers and reveal on scroll ---------- */
+  main { counter-reset: sec; }
+  main > section h2::before {
+    counter-increment: sec;
+    content: counter(sec, decimal-leading-zero);
+    display: block; margin-bottom: .55em;
+    font: 700 .8rem var(--body); letter-spacing: .14em;
+    color: var(--teal);
+  }
+  .reveal { transition: opacity .8s ease, translate .8s cubic-bezier(.2, .7, .2, 1); }
+  .reveal:not(.is-in) { opacity: 0; translate: 0 34px; }
+  .reveal .thumb, .reveal .flip {
+    transition: opacity .5s ease, scale .5s cubic-bezier(.3, .7, .2, 1);
+    transition-delay: calc(var(--i, 0) * 70ms + 150ms);
+  }
+  .reveal:not(.is-in) .thumb, .reveal:not(.is-in) .flip { opacity: 0; scale: .9; }
+  .note { font-size: .9rem; color: var(--muted); margin-top: 14px; }
+
+  /* ---------- Gallery and photo viewer ---------- */
+  .gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .thumb {
+    position: relative; padding: 0; border: 0; overflow: hidden;
+    aspect-ratio: 4 / 3; border-radius: 12px;
+    background: var(--line); cursor: zoom-in;
+  }
+  .thumb img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform .6s cubic-bezier(.3, .7, .2, 1); }
+  @media (hover: hover) { .thumb:hover img { transform: scale(1.08); } }
+
+  .lightbox {
+    position: fixed; inset: 0; z-index: 15;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+    padding: calc(20px + env(safe-area-inset-top)) 16px calc(180px + env(safe-area-inset-bottom));
+    background: rgba(10, 14, 20, .84);
+    -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+    color: #F3F6F9;
+    opacity: 0; visibility: hidden;
+    transition: opacity .35s, visibility .35s;
+  }
+  .lightbox.open { opacity: 1; visibility: visible; }
+  .lightbox figure { margin: 0; width: min(100%, 52rem); transform: scale(.94); transition: transform .45s cubic-bezier(.3, .7, .2, 1); }
+  .lightbox.open figure { transform: none; }
+  .lb-frame { overflow: hidden; border-radius: 16px; box-shadow: 0 30px 60px -20px rgba(0, 0, 0, .8); }
+  #lbImg { display: block; width: 100%; height: auto; max-height: calc(100vh - 300px); object-fit: cover; }
+  #lbImg.in { animation: photoIn .5s ease-out, kenburns 12s ease-in-out .5s infinite alternate; }
+  @keyframes photoIn { from { opacity: 0; } }
+  @keyframes kenburns { to { transform: scale(1.14) translate(-2%, -1.5%); } }
+  .lightbox figcaption { margin-top: 10px; font: 700 1.05rem var(--display); text-align: center; }
+  .lb-bar { display: flex; align-items: center; gap: 10px; }
+  .lb-bar span { min-width: 4.5em; text-align: center; font-variant-numeric: tabular-nums; color: #B9C3CF; }
+  .lb-btn {
+    width: 48px; height: 48px; border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, .3); background: rgba(255, 255, 255, .08);
+    color: inherit; font: 700 1.7rem/1 var(--body); cursor: pointer;
+  }
+  .lb-btn:hover { background: rgba(255, 255, 255, .18); }
+
+  /* ---------- Slider ---------- */
+  .dimmer { --level: 1; }
+  .dim-stage {
+    display: flex; align-items: center; justify-content: center; gap: 28px;
+    padding: 22px; margin-bottom: 14px;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 18px;
+  }
+  .dim-phone {
+    position: relative; width: 120px; height: 168px; overflow: hidden;
+    border: 6px solid var(--ink); border-radius: 18px;
+  }
+  .dim-phone img { width: 100%; height: 100%; object-fit: cover; filter: saturate(calc(.4 + var(--level) * .6)); }
+  .dim-shade { position: absolute; inset: 0; background: #000; opacity: calc((1 - var(--level)) * .85); }
+  .dim-sun { width: 64px; height: 64px; fill: var(--signal); stroke: var(--signal); stroke-width: 3; stroke-linecap: round; }
+  .dim-sun circle { stroke: var(--signal-ink); stroke-width: 2; }
+  .dim-sun .rays { transform-box: fill-box; transform-origin: center; scale: calc(.45 + var(--level) * .55); opacity: calc(.25 + var(--level) * .75); }
+  .dim-label { display: flex; justify-content: space-between; font-weight: 700; }
+  .dim-out { font-variant-numeric: tabular-nums; color: var(--teal); }
+
+  .range {
+    --fill: 100%;
+    width: 100%; height: 36px; margin: 4px 0 0;
+    background: transparent; cursor: pointer;
+    -webkit-appearance: none; appearance: none;
+  }
+  .range::-webkit-slider-runnable-track {
+    height: 10px; border-radius: 99px;
+    background: linear-gradient(to right, var(--teal) var(--fill), var(--line) var(--fill));
+  }
+  .range::-moz-range-track {
+    height: 10px; border-radius: 99px;
+    background: linear-gradient(to right, var(--teal) var(--fill), var(--line) var(--fill));
+  }
+  .range::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 28px; height: 28px; margin-top: -9px; border-radius: 50%;
+    background: var(--signal); border: 2px solid var(--signal-ink);
+    box-shadow: 0 4px 10px -4px rgba(0, 0, 0, .5);
+  }
+  .range::-moz-range-thumb {
+    width: 24px; height: 24px; border-radius: 50%;
+    background: var(--signal); border: 2px solid var(--signal-ink);
+  }
+
+  /* ---------- Sortable list ---------- */
+  .sortable { position: relative; display: grid; gap: 8px; list-style: none; padding: 0; margin: 0; counter-reset: step; }
+  .sortable li {
+    display: flex; align-items: center; gap: 12px;
+    padding: 8px 8px 8px 12px;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+    user-select: none; -webkit-user-select: none;
+    transition: box-shadow .2s, border-color .3s;
+  }
+  .sortable li::before {
+    counter-increment: step; content: counter(step);
+    display: grid; place-items: center; flex: none;
+    width: 1.9em; height: 1.9em; border-radius: 50%;
+    font: 700 .9rem var(--display);
+    background: var(--paper); color: var(--muted);
+    transition: background .3s, color .3s;
+  }
+  .sortable li.lifted { position: relative; z-index: 1; border-color: var(--teal); box-shadow: var(--shadow); }
+  .sortable.done li { border-color: color-mix(in srgb, var(--teal) 55%, var(--line)); }
+  .sortable.done li::before { background: var(--teal); color: var(--paper); }
+  .grip {
+    display: grid; place-items: center; flex: none;
+    width: 40px; height: 40px; margin-left: auto;
+    color: var(--muted); cursor: grab; touch-action: none;
+  }
+  .grip svg { width: 20px; height: 20px; fill: currentColor; }
+
+  /* ---------- Flip cards ---------- */
+  .flips { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: 10px; }
+  .flip {
+    position: relative; min-height: 150px; padding: 0;
+    border: 0; background: none; color: inherit; font: inherit; text-align: left;
+    cursor: pointer; perspective: 900px;
+  }
+  .face {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; justify-content: space-between;
+    padding: 16px; border-radius: 16px; border: 1px solid var(--line);
+    -webkit-backface-visibility: hidden; backface-visibility: hidden;
+    transition: transform .7s cubic-bezier(.3, .7, .2, 1);
+  }
+  .front { background: var(--surface); }
+  .front b { font: 720 1.35rem/1.05 var(--display); font-variation-settings: "wdth" 80; }
+  .front small { color: var(--muted); }
+  .back { justify-content: center; background: var(--ink); color: var(--paper); font-size: .95rem; line-height: 1.45; transform: rotateY(180deg); }
+  .flip[aria-pressed="true"] .front { transform: rotateY(-180deg); }
+  .flip[aria-pressed="true"] .back { transform: rotateY(0); }
+
+  /* ---------- Quiz ---------- */
+  .quiz { display: grid; gap: 8px; margin: 0; padding: 0; border: 0; }
+  .quiz legend { padding: 0; margin-bottom: 10px; font-weight: 700; }
+  .choice {
+    display: flex; align-items: center; gap: 12px;
+    padding: 13px 14px;
+    background: var(--surface); border: 2px solid var(--line); border-radius: 12px;
+    cursor: pointer; transition: border-color .2s, background .2s;
+  }
+  .choice input { width: 20px; height: 20px; margin: 0; flex: none; accent-color: var(--teal); }
+  .choice.right { border-color: var(--teal); background: color-mix(in srgb, var(--teal) 14%, var(--surface)); }
+  .choice.wrong { border-color: var(--warn); animation: shake .45s; }
+  @keyframes shake { 20% { translate: -7px; } 40% { translate: 6px; } 60% { translate: -4px; } 80% { translate: 2px; } }
+  .quiz-result { min-height: 1.6em; margin: 6px 2px 0; font-weight: 700; }
+
+  #confetti { position: fixed; inset: 0; z-index: 25; width: 100%; height: 100%; pointer-events: none; }
+
   @media (prefers-reduced-motion: reduce) {
     .finger { transition: opacity .2s; }
     .finger.press .tip, .finger.press::after { animation: none; }
+    .hero::before, .hero::after, .phone, .mini-page, .mini-finger, .mini-finger::after,
+    .start[aria-pressed="false"], #lbImg.in, .choice.wrong,
+    .js .hero h1 .w, .js .hero .lede, .js .hero .hint, .js .hero-art { animation: none; }
+    .face, .thumb img, .lightbox, .lightbox figure { transition: none; }
   }
 </style>
 </head>
 <body>
 
 <header class="hero">
-  <h1>This page scrolls and taps by itself.</h1>
-  <p class="lede">Press Start and set your phone down. It reads down the page, switches tabs, opens answers, types, swipes and ticks boxes. Your screen stays on until you press Pause.</p>
+  <h1>This page scrolls and taps <span class="hl">by itself.</span></h1>
+  <p class="lede">Press Start and set your phone down. It reads down the page, switches tabs, opens photos, drags sliders, types, sorts lists, flips cards and answers questions. Your screen stays on until you press Pause.</p>
   <p class="hint">The yellow dot <span class="dot" aria-hidden="true"></span> shows where it’s tapping. Works in Chrome on Android and Safari on iPhone and iPad.</p>
+  <div class="hero-art" aria-hidden="true">
+    <div class="phone">
+      <div class="phone-screen">
+        <div class="mini-page" id="miniPage">
+          <div class="mini-block">
+            <i class="h"></i><i></i><i></i><i class="short"></i>
+            <img data-scene="sunset" alt="" width="800" height="600">
+            <i></i><i class="short"></i>
+            <span class="mini-tabs"><b></b><b></b><b></b></span>
+            <i></i><i></i><i class="short"></i>
+            <img data-scene="aurora" alt="" width="800" height="600">
+            <i></i><i class="short"></i>
+          </div>
+        </div>
+        <span class="mini-finger"></span>
+      </div>
+    </div>
+  </div>
 </header>
 
 <!-- Everything inside <main> is the content the autopilot drives. Replace it with your own. -->
@@ -358,6 +644,20 @@
   </section>
 
   <section>
+    <h2>Photos</h2>
+    <p>It opens a picture, flips through the rest, then closes the viewer.</p>
+    <div class="gallery" data-auto="gallery">
+      <button class="thumb" aria-label="Dawn over the ridge"><img data-scene="dawn" alt="Dawn over the ridge" width="800" height="600"></button>
+      <button class="thumb" aria-label="Midday in the valley"><img data-scene="noon" alt="Midday in the valley" width="800" height="600"></button>
+      <button class="thumb" aria-label="Sunset behind the hills"><img data-scene="sunset" alt="Sunset behind the hills" width="800" height="600"></button>
+      <button class="thumb" aria-label="Dusk and the first stars"><img data-scene="dusk" alt="Dusk and the first stars" width="800" height="600"></button>
+      <button class="thumb" aria-label="Full moon over the peaks"><img data-scene="night" alt="Full moon over the peaks" width="800" height="600"></button>
+      <button class="thumb" aria-label="Northern lights"><img data-scene="aurora" alt="Northern lights" width="800" height="600"></button>
+    </div>
+    <p class="note">The page draws these pictures itself, so the file still works with no other files next to it. For your own photos, use ordinary <code>&lt;img src="…"&gt;</code> tags.</p>
+  </section>
+
+  <section>
     <h2>Questions</h2>
     <p>It opens each one so you can read along.</p>
     <div data-auto="accordion">
@@ -377,6 +677,19 @@
         <summary>What happens if I touch the screen?</summary>
         <p>It pauses so you can read or scroll yourself, then carries on a few seconds after you let go. You can turn that off in settings.</p>
       </details>
+    </div>
+  </section>
+
+  <section>
+    <h2>Sliding</h2>
+    <p>It drags sliders too. Here it turns the brightness down, the easiest way to save battery.</p>
+    <div class="dimmer" data-auto="slider" data-to="20,55">
+      <div class="dim-stage" aria-hidden="true">
+        <div class="dim-phone"><img data-scene="noon" alt="" width="800" height="600"><span class="dim-shade"></span></div>
+        <svg class="dim-sun" viewBox="0 0 48 48"><g class="rays"><path d="M24 3v6M24 39v6M3 24h6M39 24h6M9.2 9.2l4.2 4.2M34.6 34.6l4.2 4.2M9.2 38.8l4.2-4.2M34.6 13.4l4.2-4.2"/></g><circle cx="24" cy="24" r="9"/></svg>
+      </div>
+      <label class="dim-label" for="bright"><span>Brightness</span><output class="dim-out" for="bright">90%</output></label>
+      <input class="range" id="bright" type="range" min="5" max="100" value="90" data-slider>
     </div>
   </section>
 
@@ -414,6 +727,30 @@
   </section>
 
   <section>
+    <h2>Dragging</h2>
+    <p>These steps are mixed up, so it drags them into order. You can drag them too with the handle on the right, or select one and use the arrow keys.</p>
+    <ol class="sortable" data-auto="sort" aria-label="Setup steps">
+      <li tabindex="0" data-order="3"><span>Pick a speed</span><span class="grip" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.7"/><circle cx="15" cy="6" r="1.7"/><circle cx="9" cy="12" r="1.7"/><circle cx="15" cy="12" r="1.7"/><circle cx="9" cy="18" r="1.7"/><circle cx="15" cy="18" r="1.7"/></svg></span></li>
+      <li tabindex="0" data-order="1"><span>Open the page on your phone</span><span class="grip" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.7"/><circle cx="15" cy="6" r="1.7"/><circle cx="9" cy="12" r="1.7"/><circle cx="15" cy="12" r="1.7"/><circle cx="9" cy="18" r="1.7"/><circle cx="15" cy="18" r="1.7"/></svg></span></li>
+      <li tabindex="0" data-order="5"><span>Set the phone down</span><span class="grip" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.7"/><circle cx="15" cy="6" r="1.7"/><circle cx="9" cy="12" r="1.7"/><circle cx="15" cy="12" r="1.7"/><circle cx="9" cy="18" r="1.7"/><circle cx="15" cy="18" r="1.7"/></svg></span></li>
+      <li tabindex="0" data-order="2"><span>Plug in the charger</span><span class="grip" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.7"/><circle cx="15" cy="6" r="1.7"/><circle cx="9" cy="12" r="1.7"/><circle cx="15" cy="12" r="1.7"/><circle cx="9" cy="18" r="1.7"/><circle cx="15" cy="18" r="1.7"/></svg></span></li>
+      <li tabindex="0" data-order="4"><span>Press Start</span><span class="grip" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.7"/><circle cx="15" cy="6" r="1.7"/><circle cx="9" cy="12" r="1.7"/><circle cx="15" cy="12" r="1.7"/><circle cx="9" cy="18" r="1.7"/><circle cx="15" cy="18" r="1.7"/></svg></span></li>
+    </ol>
+    <p class="count sort-status" aria-live="polite">Not in order yet</p>
+  </section>
+
+  <section>
+    <h2>Flipping</h2>
+    <p>Tap a card to turn it over. These are the tricks this page uses.</p>
+    <div class="flips" data-auto="flip">
+      <button class="flip" aria-pressed="false"><span class="face front"><b>Wake Lock</b><small>What is it?</small></span><span class="face back">A browser feature that asks the phone to keep the screen on while this page is open.</span></button>
+      <button class="flip" aria-pressed="false"><span class="face front"><b>Animation frames</b><small>How does it scroll?</small></span><span class="face back">It moves a little on every screen refresh, so scrolling stays smooth and stops when the tab is hidden.</span></button>
+      <button class="flip" aria-pressed="false"><span class="face front"><b>Scroll snap</b><small>Why do cards stop neatly?</small></span><span class="face back">A CSS setting makes the swipe cards come to rest exactly at the edge of each card.</span></button>
+      <button class="flip" aria-pressed="false"><span class="face front"><b>Reduce motion</b><small>Too much movement?</small></span><span class="face back">If your phone is set to reduce motion, this page drops its animations and jumps instead of gliding.</span></button>
+    </div>
+  </section>
+
+  <section>
     <h2>Before you leave it running</h2>
     <p>It ticks these off one by one.</p>
     <ul class="checklist" data-auto="check">
@@ -425,6 +762,18 @@
   </section>
 
   <section>
+    <h2>Choosing</h2>
+    <p>It answers questions as well. It might not get it right first time.</p>
+    <fieldset class="quiz" data-auto="quiz" data-answer="b">
+      <legend>What uses the most battery while this page runs?</legend>
+      <label class="choice"><input type="radio" name="battery" value="a"><span>The scrolling script</span></label>
+      <label class="choice"><input type="radio" name="battery" value="b"><span>The lit screen</span></label>
+      <label class="choice"><input type="radio" name="battery" value="c"><span>The yellow dot</span></label>
+      <p class="quiz-result" aria-live="polite"></p>
+    </fieldset>
+  </section>
+
+  <section>
     <h2>Making it show your content</h2>
     <p>Everything inside the <code>&lt;main&gt;</code> tags in this file is the page it drives. Replace those sections with your own text, photos, menu or script, and it will scroll through them the same way.</p>
     <p>To have it tap or type something, add one attribute to that element:</p>
@@ -433,7 +782,12 @@
 &lt;div data-auto="tabs"&gt;…tab buttons…&lt;/div&gt;
 &lt;div data-auto="accordion"&gt;…details…&lt;/div&gt;
 &lt;div data-auto="carousel"&gt;…cards…&lt;/div&gt;
-&lt;ul data-auto="check"&gt;…checkboxes…&lt;/ul&gt;</pre>
+&lt;ul data-auto="check"&gt;…checkboxes…&lt;/ul&gt;
+&lt;div data-auto="gallery"&gt;…image buttons…&lt;/div&gt;
+&lt;div data-auto="slider" data-to="20,55"&gt;…range…&lt;/div&gt;
+&lt;ol data-auto="sort"&gt;…items with data-order…&lt;/ol&gt;
+&lt;div data-auto="flip"&gt;…flip cards…&lt;/div&gt;
+&lt;fieldset data-auto="quiz" data-answer="b"&gt;…radios…&lt;/fieldset&gt;</pre>
     <p>It acts on each one when it reaches the middle of the screen, then goes back to scrolling. To teach it something new, add a short function to the <code>actions</code> list in the script.</p>
     <p>To use it on your phone, upload this one file to any free host that gives you an https:// address, such as GitHub Pages or Netlify, and open that address in your browser.</p>
     <p><button class="btn" data-auto="click" data-read aria-pressed="false">Mark as read</button></p>
@@ -441,10 +795,26 @@
 
   <section>
     <h2>End of the page</h2>
-    <p class="muted">It waits a moment, goes back to the top and starts again. Turn off “Start over at the end” in settings to have it stop here instead.</p>
+    <p class="muted">It throws some confetti, waits a moment, goes back to the top and starts again. Turn off “Start over at the end” in settings to have it stop here instead.</p>
   </section>
 
 </main>
+
+<!-- Photo viewer opened by the gallery -->
+<div class="lightbox" id="lightbox" role="dialog" aria-label="Photo viewer" aria-hidden="true" inert>
+  <figure>
+    <div class="lb-frame"><img id="lbImg" alt=""></div>
+    <figcaption id="lbCap"></figcaption>
+  </figure>
+  <div class="lb-bar">
+    <button class="lb-btn" id="lbPrev" aria-label="Previous photo">&lsaquo;</button>
+    <span id="lbCount">1 / 1</span>
+    <button class="lb-btn" id="lbNext" aria-label="Next photo">&rsaquo;</button>
+    <button class="lb-btn" id="lbClose" aria-label="Close">&times;</button>
+  </div>
+</div>
+
+<canvas id="confetti" aria-hidden="true"></canvas>
 
 <!-- Ghost finger that shows where the autopilot taps -->
 <div class="finger" id="finger" aria-hidden="true"><span class="tip"></span></div>
@@ -614,20 +984,24 @@
     pos = window.scrollY;
   }
 
-  async function moveFingerTo(el, { x = 0.5, y = 0.5 } = {}) {
+  // Point the finger at a spot in a rect. `instant` skips the glide, for following a drag.
+  function fingerTo(r, { x = 0.5, y = 0.5 } = {}, instant = false) {
+    const tx = r.left + r.width * x - 23, ty = r.top + r.height * y - 23;
+    if (instant) finger.style.transition = "none";
+    finger.style.transform = `translate(${tx}px, ${ty}px)`;
+    if (instant) { void finger.offsetWidth; finger.style.transition = ""; }
+  }
+
+  async function moveFingerTo(el, at) {
     await ensureVisible(el);
     const r = el.getBoundingClientRect();
-    const tx = r.left + r.width * x - 23, ty = r.top + r.height * y - 23;
     if (!finger.classList.contains("show")) {
       // Appear in place instead of flying in from the corner.
-      finger.style.transition = "none";
-      finger.style.transform = `translate(${tx}px, ${ty}px)`;
-      void finger.offsetWidth;
-      finger.style.transition = "";
+      fingerTo(r, at, true);
       finger.classList.add("show");
       await wait(180);
     } else {
-      finger.style.transform = `translate(${tx}px, ${ty}px)`;
+      fingerTo(r, at);
       await wait(reduceMotion.matches ? 60 : 480);
     }
   }
@@ -710,6 +1084,97 @@
         if (!box.checked) box.click();
         await wait(800);
       }
+    },
+
+    async gallery(el) {
+      const thumbs = $$(".thumb", el);
+      if (!thumbs.length) return;
+      say(`Opening “${label(thumbs[0])}”`);
+      await tap(thumbs[0]);
+      thumbs[0].click();
+      await wait(2400);
+      const next = $("#lbNext"), close = $("#lbClose");
+      for (let i = 1; i < thumbs.length; i++) {
+        say(`Next photo, ${i + 1} of ${thumbs.length}`);
+        await tap(next);
+        next.click();
+        await wait(2400);
+      }
+      say("Closing the photos");
+      await tap(close);
+      close.click();
+      await wait(700);
+    },
+
+    async slider(el) {
+      const input = $('input[type="range"]', el);
+      if (!input) return;
+      const min = +input.min || 0, max = +input.max || 100;
+      const thumbAt = v => {
+        const w = input.getBoundingClientRect().width;
+        return { x: (14 + (v - min) / (max - min) * (w - 28)) / w, y: 0.5 };
+      };
+      say("Grabbing the slider");
+      await moveFingerTo(input, thumbAt(+input.value));
+      finger.classList.add("hold");
+      await wait(300);
+      for (const target of (el.dataset.to || "30").split(",").map(Number)) {
+        say(`Sliding to ${target}`);
+        const from = +input.value, steps = 30;
+        for (let i = 1; i <= steps; i++) {
+          input.value = Math.round(from + (target - from) * (i / steps));
+          input.dispatchEvent(new Event("input", { bubbles: true }));
+          fingerTo(input.getBoundingClientRect(), thumbAt(+input.value), true);
+          await wait(35);
+        }
+        await wait(1600);
+      }
+      finger.classList.remove("hold");
+    },
+
+    async sort(el) {
+      const GRIP = { x: 0.93, y: 0.5 };
+      for (let i = 0; i < el.children.length; i++) {
+        const items = [...el.children];
+        const item = items.find(li => +li.dataset.order === i + 1);
+        if (!item || items.indexOf(item) === i) continue;
+        say(`Dragging “${label(item)}” to step ${i + 1}`);
+        await moveFingerTo(item, GRIP);
+        finger.classList.add("hold");
+        item.classList.add("lifted");
+        await wait(350);
+        const rects = flip(el, () => el.insertBefore(item, items[i]));
+        fingerTo(rects.get(item), GRIP);
+        await wait(650);
+        item.classList.remove("lifted");
+        finger.classList.remove("hold");
+        updateSort(el);
+        await wait(500);
+      }
+      await wait(1200);
+    },
+
+    async flip(el) {
+      for (const card of $$(".flip", el)) {
+        say(`Turning over “${label($(".front b", card) || card)}”`);
+        await tap(card);
+        card.click();
+        await wait(2800);
+      }
+    },
+
+    async quiz(el) {
+      const radios = $$('input[type="radio"]', el);
+      const right = radios.find(r => r.value === el.dataset.answer);
+      const wrong = radios.find(r => r !== right);
+      for (const r of [wrong, right]) {
+        if (!r) continue;
+        const choice = r.closest("label") || r;
+        say(`Choosing “${label(choice)}”`);
+        await tap(r);
+        r.click();
+        await wait(2000);
+      }
     }
   };
 
@@ -743,8 +1208,10 @@
   }
 
   function resetPage() {
+    closeLightbox();
     page.innerHTML = initialHTML;
     pending = $$("[data-auto]", page);
+    initWidgets();
   }
 
   async function atEnd() {
@@ -756,6 +1223,7 @@
         return;
       }
       say("Reached the end. Starting over…");
+      confetti.burst(innerWidth / 2, innerHeight * 0.4, 160);
       await wait(2500);
       window.scrollTo({ top: 0, behavior: smooth() });
       for (let t = 0; t < 30 && window.scrollY > 2; t++) await wait(100);
@@ -820,6 +1288,7 @@
     keepAwake.off();
     finger.classList.remove("show", "press", "hold");
     $$(".is-typing", page).forEach(el => el.classList.remove("is-typing"));
+    $$(".lifted", page).forEach(el => el.classList.remove("lifted"));
     startBtn.setAttribute("aria-pressed", "false");
     startLabel.textContent = buttonText;
     startIcon.innerHTML = ICON_PLAY;
@@ -867,7 +1336,7 @@
     if (e.target && e.target.closest && e.target.closest("#dock")) return;
     holdUntil = performance.now() + HOLD_MS;
   }
-  ["touchstart", "touchmove", "wheel", "mousedown", "keydown"].forEach(type =>
+  ["touchstart", "touchmove", "wheel", "mousedown", "pointerdown", "keydown"].forEach(type =>
     addEventListener(type, onUserInput, { passive: true }));
 
   /* ---------- Demo widgets (event delegation so they survive a page reset) ---------- */
@@ -891,7 +1360,17 @@
       const on = read.getAttribute("aria-pressed") !== "true";
       read.setAttribute("aria-pressed", String(on));
       read.textContent = on ? "Marked as read" : "Mark as read";
+      if (on) confetti.burstAt(read, 70);
     }
+
+    const card = e.target.closest(".flip");
+    if (card) card.setAttribute("aria-pressed", String(card.getAttribute("aria-pressed") !== "true"));
+
+    const thumb = e.target.closest(".thumb");
+    if (thumb) openLightbox(thumb);
+    if (e.target.closest("#lbNext")) showPhoto(lb.i + 1);
+    if (e.target.closest("#lbPrev")) showPhoto(lb.i - 1);
+    if (e.target.closest("#lbClose") || e.target === lightbox) closeLightbox();
   });
 
   document.addEventListener("keydown", e => {
@@ -918,6 +1397,339 @@
     const total = list.children.length;
     if (count) count.textContent = q ? `${hits} of ${total} tips match “${input.value.trim()}”` : `${total} tips`;
   });
+
+  /* ---------- Pictures drawn by the page (an <img> with its own src is left alone) ---------- */
+  // Sky colours run top to horizon; ridges run far to near.
+  const SCENES = {
+    dawn:   { sky: ["#6F86B8", "#E9A8A6", "#FFD9A6"], sun: "#FFF4D0", at: [.68, .6], ridges: ["#A38DB2", "#7A6C9C", "#544D7E", "#332F57"] },
+    noon:   { sky: ["#3F8FD0", "#86C3EA", "#D4ECF8"], sun: "#FFFDF0", at: [.24, .2], clouds: 5, ridges: ["#A6CDB9", "#6DAA8E", "#43836A", "#285E4B"] },
+    sunset: { sky: ["#B23E6A", "#F2875E", "#FFDB8F"], sun: "#FFF1BA", at: [.42, .6], ridges: ["#C35D73", "#913E62", "#62284E", "#371837"] },
+    dusk:   { sky: ["#232E66", "#7B6BB6", "#F0AFC0"], sun: "#FFE3E6", at: [.78, .62], stars: 50, ridges: ["#7C6AA2", "#55497E", "#352F5D", "#1D1A3A"] },
+    night:  { sky: ["#050A18", "#0E1A36", "#22365E"], moon: "#F3EFDC", at: [.74, .2], stars: 170, ridges: ["#2A3C62", "#1E2C4C", "#142038", "#0A1222"] },
+    aurora: { sky: ["#030812", "#0A1D2E", "#0F3A44"], aurora: true, stars: 120, ridges: ["#1D4448", "#153337", "#0D2326", "#061416"] }
+  };
+
+  function drawScene(name, w = 800, h = 600) {
+    const s = SCENES[name];
+    let seed = [...name].reduce((a, ch) => (a * 31 + ch.charCodeAt(0)) >>> 0, 7);
+    const rand = () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296;
+    const c = document.createElement("canvas");
+    c.width = w; c.height = h;
+    const g = c.getContext("2d");
+
+    const sky = g.createLinearGradient(0, 0, 0, h * .78);
+    s.sky.forEach((col, i) => sky.addColorStop(i / (s.sky.length - 1), col));
+    g.fillStyle = sky;
+    g.fillRect(0, 0, w, h);
+
+    g.fillStyle = "#fff";
+    for (let i = 0; i < (s.stars || 0); i++) {
+      g.globalAlpha = .25 + rand() * .75;
+      g.beginPath(); g.arc(rand() * w, rand() * h * .62, .3 + rand() * 1.4, 0, 7); g.fill();
+    }
+    g.globalAlpha = 1;
+
+    if (s.aurora) {
+      for (let b = 0; b < 3; b++) {
+        const y0 = h * (.3 + b * .07), amp = 26 + rand() * 30, ph = rand() * 6, f = 1.2 + rand() * 1.5;
+        const hue = b === 1 ? "150, 120, 255" : "90, 255, 175";
+        for (let x = 0; x <= w; x += 3) {
+          const y = y0 + Math.sin(x / w * Math.PI * f + ph) * amp;
+          const len = 70 + 90 * Math.sin(x * .021 + ph * 2) ** 2;
+          const curtain = g.createLinearGradient(0, y, 0, y - len);
+          curtain.addColorStop(0, `rgba(${hue}, ${b === 1 ? .22 : .42})`);
+          curtain.addColorStop(1, `rgba(${hue}, 0)`);
+          g.fillStyle = curtain;
+          g.fillRect(x, y - len, 3, len + 3);
+        }
+      }
+    }
+
+    const disc = s.sun || s.moon;
+    if (disc) {
+      const sx = s.at[0] * w, sy = s.at[1] * h, r = s.moon ? 34 : 48;
+      const glow = g.createRadialGradient(sx, sy, r * .6, sx, sy, r * 5);
+      glow.addColorStop(0, disc + "99");
+      glow.addColorStop(1, disc + "00");
+      g.fillStyle = glow;
+      g.fillRect(0, 0, w, h);
+      g.fillStyle = disc;
+      g.beginPath(); g.arc(sx, sy, r, 0, 7); g.fill();
+      if (s.moon) {
+        g.fillStyle = "rgba(60, 70, 90, .12)";
+        [[-10, -8, 8], [12, 6, 6], [-4, 14, 5], [9, -14, 4]].forEach(([dx, dy, cr]) => {
+          g.beginPath(); g.arc(sx + dx, sy + dy, cr, 0, 7); g.fill();
+        });
+      }
+    }
+
+    for (let i = 0; i < (s.clouds || 0); i++) {
+      const cx = rand() * w, cy = h * (.1 + rand() * .28), k = .6 + rand() * .8;
+      g.fillStyle = "rgba(255, 255, 255, .78)";
+      for (let p = 0; p < 5; p++) {
+        g.beginPath(); g.ellipse(cx + (p - 2) * 28 * k, cy + (p % 2 ? -10 : 4) * k, 42 * k, 22 * k, 0, 0, 7); g.fill();
+      }
+    }
+
+    s.ridges.forEach((col, i) => {
+      const base = h * (.52 + i * .12), amp = h * (.12 - i * .018);
+      const ph = [rand() * 7, rand() * 7, rand() * 7], f = [1 + rand(), 2.5 + rand() * 2, 6 + rand() * 5];
+      g.beginPath(); g.moveTo(0, h);
+      for (let x = 0; x <= w; x += 4) {
+        const t = x / w * Math.PI;
+        g.lineTo(x, base - amp * (.6 * Math.sin(t * f[0] + ph[0]) + .3 * Math.sin(t * f[1] + ph[1]) + .12 * Math.sin(t * f[2] + ph[2])));
+      }
+      g.lineTo(w, h); g.closePath();
+      g.fillStyle = col;
+      g.fill();
+    });
+
+    return c.toDataURL("image/jpeg", .86);
+  }
+
+  const sceneCache = {};
+  function fillScenes(root) {
+    $$("img[data-scene]:not([src])", root).forEach(img => {
+      const name = img.dataset.scene;
+      if (SCENES[name]) img.src = sceneCache[name] ||= drawScene(name);
+    });
+  }
+
+  /* ---------- Photo viewer ---------- */
+  const lightbox = $("#lightbox"), lbImg = $("#lbImg"), lbCap = $("#lbCap"), lbCount = $("#lbCount");
+  const lb = { thumbs: [], i: 0, opener: null };
+
+  function showPhoto(i) {
+    if (!lb.thumbs.length) return;
+    lb.i = (i + lb.thumbs.length) % lb.thumbs.length;
+    const img = $("img", lb.thumbs[lb.i]);
+    lbImg.classList.remove("in");
+    void lbImg.offsetWidth;   // restart the fade and slow zoom
+    lbImg.src = img.src;
+    lbImg.alt = img.alt;
+    lbImg.classList.add("in");
+    lbCap.textContent = img.alt;
+    lbCount.textContent = `${lb.i + 1} / ${lb.thumbs.length}`;
+  }
+
+  function openLightbox(thumb) {
+    lb.thumbs = $$(".thumb", thumb.closest(".gallery") || page);
+    lb.opener = thumb;
+    showPhoto(lb.thumbs.indexOf(thumb));
+    lightbox.inert = false;
+    lightbox.setAttribute("aria-hidden", "false");
+    lightbox.classList.add("open");
+    if (!running) $("#lbClose").focus({ preventScroll: true });
+  }
+
+  function closeLightbox() {
+    if (!lightbox.classList.contains("open")) return;
+    const hadFocus = lightbox.contains(document.activeElement);
+    lightbox.classList.remove("open");
+    lightbox.setAttribute("aria-hidden", "true");
+    lightbox.inert = true;
+    if (hadFocus && lb.opener && lb.opener.isConnected) lb.opener.focus({ preventScroll: true });
+  }
+
+  document.addEventListener("keydown", e => {
+    if (!lightbox.classList.contains("open")) return;
+    if (e.key === "Escape") closeLightbox();
+    else if (e.key === "ArrowRight") showPhoto(lb.i + 1);
+    else if (e.key === "ArrowLeft") showPhoto(lb.i - 1);
+  });
+
+  /* ---------- Confetti ---------- */
+  const confetti = (() => {
+    const canvas = $("#confetti"), ctx = canvas.getContext("2d");
+    let parts = [], raf = 0, dpr = 1;
+    const LIFE = 220;
+    function size() {
+      dpr = Math.min(devicePixelRatio || 1, 2);
+      canvas.width = innerWidth * dpr;
+      canvas.height = innerHeight * dpr;
+    }
+    function tick() {
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, innerWidth, innerHeight);
+      parts = parts.filter(p => p.y < innerHeight + 30 && p.life < LIFE);
+      for (const p of parts) {
+        p.vy += .25; p.vx *= .985; p.vy *= .985;
+        p.x += p.vx; p.y += p.vy; p.rot += p.vr; p.life++;
+        ctx.save();
+        ctx.globalAlpha = Math.min(1, (LIFE - p.life) / 40);
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        ctx.scale(1, Math.cos(p.life * p.wobble));   // tumbling paper
+        ctx.fillStyle = p.color;
+        if (p.round) { ctx.beginPath(); ctx.arc(0, 0, p.r / 2, 0, 7); ctx.fill(); }
+        else ctx.fillRect(-p.r / 2, -p.r / 4, p.r, p.r / 2);
+        ctx.restore();
+      }
+      raf = parts.length ? requestAnimationFrame(tick) : 0;
+      if (!raf) ctx.clearRect(0, 0, innerWidth, innerHeight);
+    }
+    function burst(x, y, n = 90) {
+      if (reduceMotion.matches) return;
+      if (!raf) size();
+      const css = getComputedStyle(document.documentElement);
+      const colors = ["--signal", "--teal", "--warn", "--ink"].map(v => css.getPropertyValue(v).trim());
+      for (let i = 0; i < n; i++) {
+        const a = Math.random() * Math.PI * 2, v = 4 + Math.random() * 9;
+        parts.push({
+          x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 6,
+          r: 7 + Math.random() * 7, rot: Math.random() * 7, vr: (Math.random() - .5) * .3,
+          wobble: .05 + Math.random() * .15, round: Math.random() < .3,
+          color: colors[i % colors.length], life: 0
+        });
+      }
+      if (!raf) raf = requestAnimationFrame(tick);
+    }
+    addEventListener("resize", () => { if (raf) size(); });
+    return {
+      burst,
+      burstAt(el, n) { const r = el.getBoundingClientRect(); burst(r.left + r.width / 2, r.top + r.height / 2, n); }
+    };
+  })();
+
+  /* ---------- Sortable list: smooth reordering with FLIP ---------- */
+  // Runs `mutate`, then animates every child from where it was to where it ended up.
+  // Returns the final positions so the finger can head there straight away.
+  function flip(container, mutate) {
+    const kids = [...container.children];
+    const first = new Map(kids.map(k => [k, k.getBoundingClientRect()]));
+    mutate();
+    const last = new Map(kids.map(k => [k, k.getBoundingClientRect()]));
+    if (!reduceMotion.matches) {
+      for (const k of kids) {
+        const dy = first.get(k).top - last.get(k).top;
+        if (dy) k.animate([{ transform: `translateY(${dy}px)` }, { transform: "none" }],
+                          { duration: 450, easing: "cubic-bezier(.3, .7, .2, 1)" });
+      }
+    }
+    return last;
+  }
+
+  function updateSort(list) {
+    const orders = [...list.children].map(li => +li.dataset.order);
+    const done = orders.every((o, i) => !i || orders[i - 1] < o);
+    list.classList.toggle("done", done);
+    const status = list.nextElementSibling;
+    if (status && status.classList.contains("sort-status")) status.textContent = done ? "All in order" : "Not in order yet";
+  }
+
+  let drag = null;
+  document.addEventListener("pointerdown", e => {
+    const grip = e.target.closest && e.target.closest(".sortable .grip");
+    if (!grip) return;
+    e.preventDefault();
+    const li = grip.closest("li");
+    drag = { li, list: li.parentElement, id: e.pointerId };
+    li.classList.add("lifted");
+    if (grip.setPointerCapture) grip.setPointerCapture(e.pointerId);
+  });
+  document.addEventListener("pointermove", e => {
+    if (!drag || e.pointerId !== drag.id) return;
+    const { li, list } = drag;
+    const top = list.getBoundingClientRect().top;
+    const mid = el => top + el.offsetTop + el.offsetHeight / 2;
+    const prev = li.previousElementSibling, next = li.nextElementSibling;
+    if (prev && e.clientY < mid(prev)) flip(list, () => list.insertBefore(li, prev));
+    else if (next && e.clientY > mid(next)) flip(list, () => list.insertBefore(next, li));
+  });
+  function endDrag() {
+    if (!drag) return;
+    drag.li.classList.remove("lifted");
+    updateSort(drag.list);
+    drag = null;
+  }
+  document.addEventListener("pointerup", endDrag);
+  document.addEventListener("pointercancel", endDrag);
+
+  document.addEventListener("keydown", e => {
+    const li = e.target.closest && e.target.closest(".sortable > li");
+    if (!li || (e.key !== "ArrowUp" && e.key !== "ArrowDown")) return;
+    e.preventDefault();
+    const list = li.parentElement;
+    const other = e.key === "ArrowUp" ? li.previousElementSibling : li.nextElementSibling;
+    if (!other) return;
+    flip(list, () => (e.key === "ArrowUp" ? list.insertBefore(li, other) : list.insertBefore(other, li)));
+    li.focus();
+    updateSort(list);
+  });
+
+  /* ---------- Slider ---------- */
+  function syncSlider(input) {
+    const min = +input.min || 0, max = +input.max || 100, f = (input.value - min) / (max - min);
+    input.style.setProperty("--fill", `calc(14px + ${f} * (100% - 28px))`);
+    const box = input.closest(".dimmer");
+    if (!box) return;
+    $(".dim-out", box).textContent = `${input.value}%`;
+    box.style.setProperty("--level", f.toFixed(3));
+  }
+  document.addEventListener("input", e => {
+    if (e.target.matches && e.target.matches("[data-slider]")) syncSlider(e.target);
+  });
+
+  /* ---------- Quiz ---------- */
+  document.addEventListener("change", e => {
+    const radio = e.target;
+    if (!radio.matches || !radio.matches('.quiz input[type="radio"]')) return;
+    const quiz = radio.closest(".quiz"), choice = radio.closest(".choice");
+    const result = $(".quiz-result", quiz);
+    $$(".choice", quiz).forEach(c => c.classList.remove("right", "wrong"));
+    void choice.offsetWidth;   // restart the shake if the same wrong answer is picked again
+    if (radio.value === quiz.dataset.answer) {
+      choice.classList.add("right");
+      result.textContent = "Right. The screen uses the most, so turn the brightness down.";
+      confetti.burstAt(choice);
+    } else {
+      choice.classList.add("wrong");
+      result.textContent = "Not quite. Try another one.";
+    }
+  });
+
+  /* ---------- Sections fade up as they scroll into view ---------- */
+  const revealer = "IntersectionObserver" in window && !reduceMotion.matches
+    ? new IntersectionObserver(entries => entries.forEach(en => {
+        if (!en.isIntersecting) return;
+        en.target.classList.add("is-in");
+        revealer.unobserve(en.target);
+      }), { rootMargin: "0px 0px -12% 0px" })
+    : null;
+
+  // Sets up everything inside <main>. Runs on load and again after each page reset.
+  function initWidgets() {
+    fillScenes(page);
+    $$("[data-slider]", page).forEach(syncSlider);
+    $$(".sortable", page).forEach(updateSort);
+    $$(".gallery, .flips", page).forEach(g => [...g.children].forEach((c, i) => c.style.setProperty("--i", i)));
+    if (revealer) {
+      revealer.disconnect();
+      $$("main > section", page).forEach(s => { s.classList.add("reveal"); revealer.observe(s); });
+    }
+  }
+
+  /* ---------- Hero: words rise in one by one, mini phone loops ---------- */
+  const h1 = $(".hero h1");
+  let word = 0;
+  [...h1.childNodes].forEach(n => {
+    if (n.nodeType !== Node.TEXT_NODE) { n.classList.add("w"); n.style.setProperty("--i", word++); return; }
+    const frag = document.createDocumentFragment();
+    n.textContent.split(/(\s+)/).forEach(part => {
+      if (!part) return;
+      if (/^\s+$/.test(part)) { frag.append(part); return; }
+      const w = document.createElement("span");
+      w.className = "w";
+      w.style.setProperty("--i", word++);
+      w.textContent = part;
+      frag.append(w);
+    });
+    n.replaceWith(frag);
+  });
+  const miniPage = $("#miniPage");
+  miniPage.append(miniPage.firstElementChild.cloneNode(true));   // two copies make the loop seamless
+  fillScenes(document);
+  initWidgets();
 
   keepAwake.render();
 })();
