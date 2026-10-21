@@ -1,0 +1,926 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#E9EDF1" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1C2430" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Autopilot page</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: light;
+    --paper: #E9EDF1;
+    --surface: #F7F9FB;
+    --ink: #18212C;
+    --muted: #556170;
+    --line: #C6CFD9;
+    --signal: #FFC21A;
+    --signal-ink: #18212C;
+    --teal: #0F6B6B;
+    --warn: #B3410E;
+    --shadow: 0 14px 34px -14px rgba(24, 33, 44, .45);
+    --display: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
+    --body: "Atkinson Hyperlegible", ui-sans-serif, system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      color-scheme: dark;
+      --paper: #1C2430;
+      --surface: #253142;
+      --ink: #E7ECF2;
+      --muted: #9DAABA;
+      --line: #36465C;
+      --signal: #FFC93D;
+      --signal-ink: #1C2430;
+      --teal: #62CBC5;
+      --warn: #FF9466;
+      --shadow: 0 14px 34px -14px rgba(0, 0, 0, .7);
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font: 400 1.0625rem/1.6 var(--body);
+    padding-bottom: calc(170px + env(safe-area-inset-bottom));
+    -webkit-tap-highlight-color: transparent;
+  }
+  :focus-visible { outline: 3px solid var(--teal); outline-offset: 2px; }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    max-width: 40rem;
+    margin: 0 auto;
+    padding: calc(64px + env(safe-area-inset-top)) 22px 40px;
+  }
+  .hero h1 {
+    font-family: var(--display);
+    font-weight: 780;
+    font-variation-settings: "wdth" 76, "opsz" 96;
+    font-size: clamp(2.8rem, 13vw, 5.25rem);
+    line-height: .9;
+    letter-spacing: -.028em;
+    margin: 0 0 .5em;
+    text-wrap: balance;
+  }
+  .lede { font-size: 1.2rem; line-height: 1.5; margin: 0 0 1em; max-width: 34ch; }
+  .hint { color: var(--muted); margin: 0; }
+  .dot {
+    display: inline-block;
+    width: .9em; height: .9em;
+    vertical-align: -.12em;
+    border-radius: 50%;
+    background: var(--signal);
+    border: 2px solid var(--signal-ink);
+  }
+
+  /* ---------- Page content ---------- */
+  main { max-width: 40rem; margin: 0 auto; padding: 0 22px; }
+  main > section { padding: 56px 0 12px; border-top: 1px solid var(--line); }
+  main h2 {
+    font-family: var(--display);
+    font-weight: 700;
+    font-variation-settings: "wdth" 86, "opsz" 40;
+    font-size: 1.8rem;
+    line-height: 1.1;
+    letter-spacing: -.012em;
+    margin: 0 0 .45em;
+  }
+  main p { margin: 0 0 1em; max-width: 62ch; }
+  .muted { color: var(--muted); }
+  code { font: .9em ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  pre {
+    margin: 0 0 1.2em;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 14px 16px;
+    overflow-x: auto;
+    font: .84rem/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+
+  /* Tabs */
+  [role="tablist"] {
+    display: flex; gap: 4px; padding: 4px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    overflow-x: auto;
+  }
+  [role="tab"] {
+    flex: 1 0 auto;
+    font: 700 .95rem var(--body);
+    padding: 10px 14px;
+    border: 0; border-radius: 10px;
+    background: transparent; color: var(--muted);
+    cursor: pointer;
+  }
+  [role="tab"][aria-selected="true"] { background: var(--ink); color: var(--paper); }
+  [role="tabpanel"] { padding: 18px 2px 0; }
+
+  /* Accordion */
+  details { border-bottom: 1px solid var(--line); }
+  details:first-of-type { border-top: 1px solid var(--line); }
+  details:last-of-type { border-bottom: 0; }
+  summary {
+    list-style: none; cursor: pointer;
+    padding: 16px 40px 16px 0;
+    font-weight: 700; position: relative;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary::after {
+    content: "+";
+    position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+    font: 500 1.6rem/1 var(--display); color: var(--muted);
+  }
+  details[open] summary::after { content: "\2212"; }
+  details p { color: var(--muted); margin: 0 0 18px; }
+
+  /* Search */
+  .search {
+    display: block; width: 100%;
+    font: inherit; color: var(--ink);
+    padding: 14px 16px;
+    background: var(--surface);
+    border: 2px solid var(--line);
+    border-radius: 12px;
+    -webkit-appearance: none; appearance: none;
+  }
+  .search.is-typing { border-color: var(--teal); box-shadow: 0 0 0 4px color-mix(in srgb, var(--teal) 20%, transparent); }
+  .count { font-size: .9rem; color: var(--muted); margin: 10px 2px 0; }
+  .tips { list-style: none; padding: 0; margin: 6px 0 0; }
+  .tips li { padding: 11px 2px; border-bottom: 1px dashed var(--line); }
+  .tips li:last-child { border-bottom: 0; }
+
+  /* Carousel */
+  .track {
+    display: flex; gap: 14px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-padding: 0 22px;
+    padding: 4px 22px 20px;
+    margin: 0 -22px;
+    scrollbar-width: none;
+  }
+  .track::-webkit-scrollbar { display: none; }
+  .card {
+    flex: 0 0 78%;
+    max-width: 22rem;
+    scroll-snap-align: start;
+    min-height: 190px;
+    display: flex; flex-direction: column; justify-content: space-between; gap: 24px;
+    padding: 20px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+  }
+  .card h3 {
+    font-family: var(--display);
+    font-variation-settings: "wdth" 80;
+    font-size: 1.55rem; line-height: 1.05; font-weight: 720;
+    margin: 0;
+  }
+  .card p { margin: 0; color: var(--muted); }
+
+  /* Checklist */
+  .checklist { list-style: none; padding: 0; margin: 0; }
+  .checklist label {
+    display: flex; gap: 14px; align-items: center;
+    padding: 13px 2px;
+    border-bottom: 1px solid var(--line);
+    cursor: pointer;
+  }
+  .checklist li:last-child label { border-bottom: 0; }
+  .checklist input { width: 22px; height: 22px; margin: 0; flex: none; accent-color: var(--teal); }
+  .checklist input:checked + span { color: var(--muted); text-decoration: line-through; }
+
+  .btn {
+    font: 700 1rem var(--body);
+    padding: 12px 20px;
+    border: 2px solid var(--ink); border-radius: 999px;
+    background: transparent; color: var(--ink);
+    cursor: pointer;
+  }
+  .btn[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+
+  /* ---------- Dock ---------- */
+  .dock {
+    position: fixed; z-index: 20;
+    left: 12px; right: 12px;
+    bottom: calc(12px + env(safe-area-inset-bottom));
+    max-width: 34rem; margin: 0 auto;
+    padding: 14px 12px 12px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 22px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .progress {
+    position: absolute; left: 0; top: 0;
+    width: 100%; height: 4px;
+    background: var(--signal);
+    transform-origin: left; transform: scaleX(0);
+  }
+  .status {
+    display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    margin: 0 4px 10px;
+    font-size: .85rem; color: var(--muted);
+    min-height: 1.4em;
+  }
+  .lock { display: flex; align-items: center; gap: 8px; flex: none; }
+  .lock i {
+    flex: none; width: 10px; height: 10px; border-radius: 50%;
+    border: 2px solid var(--muted);
+  }
+  .lock[data-mode="native"] i, .lock[data-mode="video"] i { background: var(--signal); border-color: var(--signal); }
+  .lock[data-mode="native"], .lock[data-mode="video"] { color: var(--ink); }
+  .lock[data-mode="failed"] { color: var(--warn); }
+  .lock[data-mode="failed"] i { border-color: var(--warn); }
+  .now { flex: 1 1 0; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: right; }
+
+  .controls { display: flex; gap: 8px; align-items: stretch; }
+  .start {
+    flex: 1;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    min-height: 54px; padding: 0 18px;
+    font: 700 1.15rem var(--display);
+    font-variation-settings: "wdth" 90;
+    border: 0; border-radius: 16px;
+    background: var(--signal); color: var(--signal-ink);
+    cursor: pointer;
+  }
+  .start[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+  .start svg { width: 18px; height: 18px; fill: currentColor; }
+  .speed {
+    display: flex; align-items: center;
+    border: 1px solid var(--line); border-radius: 14px;
+  }
+  .speed button, .icon-btn {
+    width: 44px; align-self: stretch;
+    border: 0; background: transparent; color: var(--ink);
+    font: 600 1.4rem/1 var(--display);
+    cursor: pointer; border-radius: 14px;
+  }
+  .speed output { display: grid; justify-items: center; min-width: 2.6rem; line-height: 1.05; }
+  .speed output b { font: 700 1.15rem var(--display); font-variant-numeric: tabular-nums; }
+  .speed output small { font-size: .7rem; color: var(--muted); }
+  .icon-btn { border: 1px solid var(--line); width: 50px; }
+  .icon-btn[aria-expanded="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .icon-btn svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+
+  .sheet { padding: 2px 4px 12px; margin-bottom: 10px; border-bottom: 1px solid var(--line); }
+  .sheet[hidden] { display: none; }
+  .toggle { display: flex; align-items: center; gap: 12px; padding: 9px 0; cursor: pointer; }
+  .toggle input { width: 22px; height: 22px; margin: 0; flex: none; accent-color: var(--teal); }
+  .sheet .btn { margin-top: 8px; padding: 9px 16px; font-size: .95rem; }
+
+  /* ---------- Ghost finger ---------- */
+  .finger {
+    position: fixed; left: 0; top: 0; z-index: 30;
+    width: 46px; height: 46px;
+    pointer-events: none;
+    opacity: 0;
+    transform: translate(-80px, -80px);
+    transition: transform .45s cubic-bezier(.3, .7, .2, 1), opacity .2s;
+  }
+  .finger.show { opacity: 1; }
+  .finger .tip {
+    position: absolute; inset: 0; border-radius: 50%;
+    background: rgba(255, 194, 26, .82);
+    background: color-mix(in srgb, var(--signal) 82%, transparent);
+    border: 2px solid var(--signal-ink);
+    box-shadow: 0 8px 18px -8px rgba(0, 0, 0, .55);
+    transition: transform .15s;
+  }
+  .finger.hold .tip { transform: scale(.84); }
+  .finger.press .tip { animation: press .28s ease-out; }
+  .finger::after {
+    content: ""; position: absolute; inset: 0; border-radius: 50%;
+    border: 3px solid var(--signal); opacity: 0;
+  }
+  .finger.press::after { animation: ripple .55s ease-out; }
+  @keyframes press { 40% { transform: scale(.78); } 100% { transform: scale(1); } }
+  @keyframes ripple { from { transform: scale(1); opacity: .9; } to { transform: scale(2.3); opacity: 0; } }
+
+  #keepAwakeVideo {
+    position: fixed; left: 0; bottom: 0;
+    width: 2px; height: 2px;
+    opacity: .01; pointer-events: none;
+  }
+
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .finger { transition: opacity .2s; }
+    .finger.press .tip, .finger.press::after { animation: none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <h1>This page scrolls and taps by itself.</h1>
+  <p class="lede">Press Start and set your phone down. It reads down the page, switches tabs, opens answers, types, swipes and ticks boxes. Your screen stays on until you press Pause.</p>
+  <p class="hint">The yellow dot <span class="dot" aria-hidden="true"></span> shows where it’s tapping. Works in Chrome on Android and Safari on iPhone and iPad.</p>
+</header>
+
+<!-- Everything inside <main> is the content the autopilot drives. Replace it with your own. -->
+<main id="page">
+
+  <section>
+    <h2>Keeping the screen on</h2>
+    <p>Phones dim and lock to save battery. When you press Start, this page asks the browser to keep the screen awake, and lets go when you press Pause.</p>
+    <div class="tabs" data-auto="tabs">
+      <div role="tablist" aria-label="Devices">
+        <button role="tab" id="tab-a" aria-selected="true" aria-controls="panel-a">Android</button>
+        <button role="tab" id="tab-b" aria-selected="false" aria-controls="panel-b" tabindex="-1">iPhone and iPad</button>
+        <button role="tab" id="tab-c" aria-selected="false" aria-controls="panel-c" tabindex="-1">If it stops</button>
+      </div>
+      <div role="tabpanel" id="panel-a" aria-labelledby="tab-a">
+        <p>Chrome, Samsung Internet, Edge and Firefox can all keep the screen on for a web page. There’s nothing to set up. It works as soon as you press Start.</p>
+      </div>
+      <div role="tabpanel" id="panel-b" aria-labelledby="tab-b" hidden>
+        <p>Safari has supported this since iOS 16.4. On older versions, and in home screen apps, the page also plays a tiny silent video you can’t see, which keeps the screen awake the same way.</p>
+      </div>
+      <div role="tabpanel" id="panel-c" aria-labelledby="tab-c" hidden>
+        <p>Switching to another app or tab lets the screen sleep. When you come back, the page asks again on its own. Open it from an https:// address rather than a file saved on the phone, and if the status still says it can’t keep the screen on, set Auto-Lock (iPhone) or Screen timeout (Android) to a longer time.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Questions</h2>
+    <p>It opens each one so you can read along.</p>
+    <div data-auto="accordion">
+      <details>
+        <summary>Why do I have to press Start?</summary>
+        <p>Browsers only let a page keep the screen on after you’ve tapped something on it. That rule stops pages from draining your battery without you knowing.</p>
+      </details>
+      <details>
+        <summary>Will it drain my battery?</summary>
+        <p>A lit screen uses more battery than anything else here. Turn the brightness down, or plug in if it will run for hours.</p>
+      </details>
+      <details>
+        <summary>Can it scroll other websites?</summary>
+        <p>No. Browsers stop one page from controlling another, for your safety. To automate other sites you need a browser extension, or a tool like Playwright running on a computer.</p>
+      </details>
+      <details>
+        <summary>What happens if I touch the screen?</summary>
+        <p>It pauses so you can read or scroll yourself, then carries on a few seconds after you let go. You can turn that off in settings.</p>
+      </details>
+    </div>
+  </section>
+
+  <section>
+    <h2>Typing</h2>
+    <p>It can fill in boxes too. Watch it search this list.</p>
+    <input class="search" type="search" placeholder="Search tips" aria-label="Search tips" data-auto="type" data-text="screen" data-filter="tip-list" autocomplete="off">
+    <p class="count" id="tip-list-count" aria-live="polite">10 tips</p>
+    <ul class="tips" id="tip-list">
+      <li>Turn the screen brightness down to save battery</li>
+      <li>Plug in the charger for long sessions</li>
+      <li>Lock rotation so the page doesn’t flip sideways</li>
+      <li>Use Guided Access on iPhone to keep the screen on this page</li>
+      <li>Use app pinning on Android so the screen stays on the browser</li>
+      <li>Turn on Do Not Disturb so pop-ups don’t cover the page</li>
+      <li>Close other tabs to keep the browser quick</li>
+      <li>Keep the phone out of direct sun so it doesn’t overheat</li>
+      <li>Wipe the screen before putting it on display</li>
+      <li>Pick a slow speed for long passages of text</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Swiping</h2>
+    <p>Some ways people leave a page running.</p>
+    <div data-auto="carousel">
+      <div class="track" aria-label="Ways to use it">
+        <article class="card"><h3>Recipe on the counter</h3><p>Hands covered in flour? The recipe keeps moving and the screen stays lit.</p></article>
+        <article class="card"><h3>Teleprompter</h3><p>Put your script in the page, pick a slow speed and read as it rolls.</p></article>
+        <article class="card"><h3>Shop window</h3><p>Loop a menu or price list on an old phone or tablet.</p></article>
+        <article class="card"><h3>Waiting room</h3><p>Notices that cycle on their own all day, with nobody touching them.</p></article>
+        <article class="card"><h3>Product demo</h3><p>Show a page in action at a stand while you talk to people.</p></article>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Before you leave it running</h2>
+    <p>It ticks these off one by one.</p>
+    <ul class="checklist" data-auto="check">
+      <li><label><input type="checkbox"><span>Charger plugged in</span></label></li>
+      <li><label><input type="checkbox"><span>Brightness turned down</span></label></li>
+      <li><label><input type="checkbox"><span>Do Not Disturb on</span></label></li>
+      <li><label><input type="checkbox"><span>Rotation locked</span></label></li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Making it show your content</h2>
+    <p>Everything inside the <code>&lt;main&gt;</code> tags in this file is the page it drives. Replace those sections with your own text, photos, menu or script, and it will scroll through them the same way.</p>
+    <p>To have it tap or type something, add one attribute to that element:</p>
+<pre>&lt;button data-auto="click"&gt;Next photo&lt;/button&gt;
+&lt;input data-auto="type" data-text="pizza"&gt;
+&lt;div data-auto="tabs"&gt;…tab buttons…&lt;/div&gt;
+&lt;div data-auto="accordion"&gt;…details…&lt;/div&gt;
+&lt;div data-auto="carousel"&gt;…cards…&lt;/div&gt;
+&lt;ul data-auto="check"&gt;…checkboxes…&lt;/ul&gt;</pre>
+    <p>It acts on each one when it reaches the middle of the screen, then goes back to scrolling. To teach it something new, add a short function to the <code>actions</code> list in the script.</p>
+    <p>To use it on your phone, upload this one file to any free host that gives you an https:// address, such as GitHub Pages or Netlify, and open that address in your browser.</p>
+    <p><button class="btn" data-auto="click" data-read aria-pressed="false">Mark as read</button></p>
+  </section>
+
+  <section>
+    <h2>End of the page</h2>
+    <p class="muted">It waits a moment, goes back to the top and starts again. Turn off “Start over at the end” in settings to have it stop here instead.</p>
+  </section>
+
+</main>
+
+<!-- Ghost finger that shows where the autopilot taps -->
+<div class="finger" id="finger" aria-hidden="true"><span class="tip"></span></div>
+
+<!-- Fallback for older iOS/Android: a silent, invisible looping video keeps the screen awake -->
+<video id="keepAwakeVideo" muted playsinline webkit-playsinline loop preload="auto" aria-hidden="true" tabindex="-1">
+  <source src="data:video/mp4;base64,AAAAIGZ0eXBpc29tAAACAGlzb21pc28yYXZjMW1wNDEAAAMtbW9vdgAAAGxtdmhkAAAAAAAAAAAAAAAAAAAD6AAAB9AAAQAAAQAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAld0cmFrAAAAXHRraGQAAAADAAAAAAAAAAAAAAABAAAAAAAAB9AAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAABAAAAAAEAAAABAAAAAAAAkZWR0cwAAABxlbHN0AAAAAAAAAAEAAAfQAAAAAAABAAAAAAHPbWRpYQAAACBtZGhkAAAAAAAAAAAAAAAAAABAAAAAgABVxAAAAAAALWhkbHIAAAAAAAAAAHZpZGUAAAAAAAAAAAAAAABWaWRlb0hhbmRsZXIAAAABem1pbmYAAAAUdm1oZAAAAAEAAAAAAAAAAAAAACRkaW5mAAAAHGRyZWYAAAAAAAAAAQAAAAx1cmwgAAAAAQAAATpzdGJsAAAAunN0c2QAAAAAAAAAAQAAAKphdmMxAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAEAAQABIAAAASAAAAAAAAAABFUxhdmM2MC4zMS4xMDIgbGlieDI2NAAAAAAAAAAAAAAAGP//AAAAMGF2Y0MBQsAe/+EAF2dCwB7ZBCbARAAAAwAEAAADAAg8WLkgAQAGaMuAZRMgAAAAEHBhc3AAAAABAAAAAQAAABRidHJ0AAAAAAAACnQAAAp0AAAAGHN0dHMAAAAAAAAAAQAAAAIAAEAAAAAAFHN0c3MAAAAAAAAAAQAAAAEAAAAcc3RzYwAAAAAAAAABAAAAAQAAAAIAAAABAAAAHHN0c3oAAAAAAAAAAAAAAAIAAAKSAAAACwAAABRzdGNvAAAAAAAAAAEAAANdAAAAYnVkdGEAAABabWV0YQAAAAAAAAAhaGRscgAAAAAAAAAAbWRpcmFwcGwAAAAAAAAAAAAAAAAtaWxzdAAAACWpdG9vAAAAHWRhdGEAAAABAAAAAExhdmY2MC4xNi4xMDAAAAAIZnJlZQAAAqVtZGF0AAACcgYF//9u3EXpvebZSLeWLNgg2SPu73gyNjQgLSBjb3JlIDE2NCByMzEwOCAzMWUxOWY5IC0gSC4yNjQvTVBFRy00IEFWQyBjb2RlYyAtIENvcHlsZWZ0IDIwMDMtMjAyMyAtIGh0dHA6Ly93d3cudmlkZW9sYW4ub3JnL3gyNjQuaHRtbCAtIG9wdGlvbnM6IGNhYmFjPTAgcmVmPTMgZGVibG9jaz0xOi0zOi0zIGFuYWx5c2U9MHgxOjB4MTExIG1lPWhleCBzdWJtZT03IHBzeT0xIHBzeV9yZD0yLjAwOjAuNzAgbWl4ZWRfcmVmPTEgbWVfcmFuZ2U9MTYgY2hyb21hX21lPTEgdHJlbGxpcz0xIDh4OGRjdD0wIGNxbT0wIGRlYWR6b25lPTIxLDExIGZhc3RfcHNraXA9MSBjaHJvbWFfcXBfb2Zmc2V0PS00IHRocmVhZHM9MSBsb29rYWhlYWRfdGhyZWFkcz0xIHNsaWNlZF90aHJlYWRzPTAgbnI9MCBkZWNpbWF0ZT0xIGludGVybGFjZWQ9MCBibHVyYXlfY29tcGF0PTAgY29uc3RyYWluZWRfaW50cmE9MCBiZnJhbWVzPTAgd2VpZ2h0cD0wIGtleWludD0yNTAga2V5aW50X21pbj0xIHNjZW5lY3V0PTQwIGludHJhX3JlZnJlc2g9MCByY19sb29rYWhlYWQ9NDAgcmM9Y3JmIG1idHJlZT0xIGNyZj01MS4wIHFjb21wPTAuNjAgcXBtaW49MCBxcG1heD02OSBxcHN0ZXA9NCBpcF9yYXRpbz0xLjQwIGFxPTE6MS4yMACAAAAAGGWIhAZznJigACHnJycnXXXXXXXXXXXXgAAAAAdBmjgMZzhG" type="video/mp4">
+  <source src="data:video/webm;base64,GkXfo59ChoEBQveBAULygQRC84EIQoKEd2VibUKHgQJChYECGFOAZwEAAAAAAAIIEU2bdLpNu4tTq4QVSalmU6yBoU27i1OrhBZUrmtTrIHYTbuMU6uEElTDZ1OsggEeTbuMU6uEHFO7a1OsggHy7AEAAAAAAABZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAVSalmsirXsYMPQkBNgI1MYXZmNjAuMTYuMTAwV0GNTGF2ZjYwLjE2LjEwMESJiECfQAAAAAAAFlSua8GuAQAAAAAAADjXgQFzxYhlEpQMuWId+ZyBACK1nIN1bmSIgQCGhVZfVlA4g4EBI+ODhDuaygDgibCBQLqBQJqBAhJUw2f8c3OgY8CAZ8iaRaOHRU5DT0RFUkSHjUxhdmY2MC4xNi4xMDBzc9ZjwItjxYhlEpQMuWId+WfIoUWjh0VOQ09ERVJEh5RMYXZjNjAuMzEuMTAyIGxpYnZweGfIoUWjiERVUkFUSU9ORIeTMDA6MDA6MDIuMDAwMDAwMDAwAB9DtnXO54EAo6qBAACA8AIAnQEqQABAAABHCIWFiJmEiAKCAAZwPEJgCrIg9zAA/v+PvACjnYED6AAxAgABEBAAGAAZ1/QMAAEsBgCmAP7/q1CAHFO7a5G7j7OBALeK94EB8YIBn/CBAw==" type="video/webm">
+</video>
+
+<div class="dock" id="dock">
+  <div class="progress" id="progress"></div>
+
+  <div class="sheet" id="sheet" hidden>
+    <label class="toggle"><input type="checkbox" id="optInteract" checked><span>Tap, type and swipe on the page</span></label>
+    <label class="toggle"><input type="checkbox" id="optLoop" checked><span>Start over at the end</span></label>
+    <label class="toggle"><input type="checkbox" id="optHold" checked><span>Pause while I touch the screen</span></label>
+    <button class="btn" id="fullscreen" hidden>Go full screen</button>
+  </div>
+
+  <div class="status">
+    <span class="lock" id="lock" data-mode="off" aria-live="polite"><i></i><span id="lockText">Screen sleeps as usual</span></span>
+    <span class="now" id="now">Ready</span>
+  </div>
+
+  <div class="controls">
+    <button class="start" id="start" aria-pressed="false">
+      <svg id="startIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l12.5-7.5z"/></svg>
+      <span id="startLabel">Start</span>
+    </button>
+    <div class="speed" role="group" aria-label="Scroll speed">
+      <button id="slower" aria-label="Slower">&minus;</button>
+      <output id="speedOut" aria-live="polite"><b id="speedNum">3</b><small>speed</small></output>
+      <button id="faster" aria-label="Faster">+</button>
+    </div>
+    <button class="icon-btn" id="settingsBtn" aria-expanded="false" aria-controls="sheet" aria-label="Settings">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>
+    </button>
+  </div>
+</div>
+
+<script>
+(() => {
+  "use strict";
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+
+  const page = $("#page");
+  const dock = $("#dock");
+  const finger = $("#finger");
+  const video = $("#keepAwakeVideo");
+  const startBtn = $("#start"), startLabel = $("#startLabel"), startIcon = $("#startIcon");
+  const nowEl = $("#now"), lockEl = $("#lock"), lockText = $("#lockText");
+  const progress = $("#progress");
+  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)");
+
+  const ICON_PLAY = '<path d="M7 4.5v15l12.5-7.5z"/>';
+  const ICON_PAUSE = '<path d="M6.5 4.5h4v15h-4zM13.5 4.5h4v15h-4z"/>';
+
+  const settings = { interact: true, loop: true, holdOnTouch: true, level: 3 };
+  const pxPerSecond = () => 14 * settings.level;   // level 1–10
+  const HOLD_MS = 3000;                              // pause after the user touches
+  const TRIGGER_LINE = 0.45;                         // act when an element reaches 45% down the screen
+
+  const initialHTML = page.innerHTML;
+  let pending = $$("[data-auto]", page);
+
+  let running = false, busy = false, session = 0;
+  let pos = 0, lastT = 0, raf = 0, holdUntil = 0;
+
+  /* ---------- Small helpers ---------- */
+  class Cancelled extends Error {}
+  function wait(ms) {
+    const s = session;
+    return new Promise((resolve, reject) =>
+      setTimeout(() => (running && s === session ? resolve() : reject(new Cancelled())), ms));
+  }
+  let lastSaid = "";
+  function say(text) { if (text !== lastSaid) { lastSaid = text; nowEl.textContent = text; } }
+  function label(el) {
+    const t = el.getAttribute("aria-label") || el.textContent || el.placeholder || "";
+    return t.trim().replace(/\s+/g, " ").slice(0, 36);
+  }
+  const maxScroll = () => Math.max(0, document.documentElement.scrollHeight - innerHeight);
+  const smooth = () => (reduceMotion.matches ? "auto" : "smooth");
+
+  /* ---------- Keep the screen awake ---------- */
+  const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) ||
+                (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+
+  const keepAwake = {
+    lock: null, mode: "off", wanted: false,
+
+    async on() {
+      this.wanted = true;
+      // Home-screen web apps on older iOS accept the wake lock but ignore it, so add the video too.
+      if (isIOS && navigator.standalone === true) this.playVideo();
+      if (this.lock && !this.lock.released) return;
+
+      if ("wakeLock" in navigator && window.isSecureContext) {
+        try {
+          this.lock = await navigator.wakeLock.request("screen");
+          this.lock.addEventListener("release", () => {
+            this.lock = null;
+            // Released by the system while still visible: ask again.
+            if (this.wanted && document.visibilityState === "visible") setTimeout(() => this.on(), 1000);
+          });
+          if (!this.wanted) { this.off(); return; }   // user paused while we were waiting
+          this.mode = "native";
+          this.render();
+          return;
+        } catch (err) {
+          console.warn("Wake lock was refused, using the video method instead:", err);
+        }
+      }
+      await this.playVideo();
+    },
+
+    async playVideo() {
+      try {
+        video.muted = true;
+        await video.play();
+        if (this.mode !== "native") this.mode = "video";
+      } catch (err) {
+        console.warn("Keep-awake video could not play:", err);
+        if (this.mode !== "native") this.mode = "failed";
+      }
+      if (!this.wanted) { video.pause(); this.mode = "off"; }
+      this.render();
+    },
+
+    off() {
+      this.wanted = false;
+      if (this.lock) { this.lock.release().catch(() => {}); this.lock = null; }
+      video.pause();
+      this.mode = "off";
+      this.render();
+    },
+
+    render() {
+      lockEl.dataset.mode = this.mode;
+      lockEl.title = this.mode === "video" ? "Using the silent-video backup method" : "";
+      lockText.textContent = {
+        off: "Screen sleeps as usual",
+        native: "Screen stays on",
+        video: "Screen stays on",
+        failed: "Can’t keep the screen on here"
+      }[this.mode];
+    }
+  };
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible" && keepAwake.wanted) keepAwake.on();
+  });
+
+  /* ---------- Ghost finger ---------- */
+  async function ensureVisible(el) {
+    const r = el.getBoundingClientRect();
+    const bottomLimit = dock.getBoundingClientRect().top - 24;
+    const topLimit = 24;
+    let delta = 0;
+    if (r.bottom > bottomLimit) delta = r.bottom - bottomLimit;
+    else if (r.top < topLimit) delta = r.top - topLimit;
+    if (Math.abs(delta) < 2) return;
+    window.scrollTo({ top: window.scrollY + delta, behavior: smooth() });
+    await wait(reduceMotion.matches ? 50 : 520);
+    pos = window.scrollY;
+  }
+
+  async function moveFingerTo(el, { x = 0.5, y = 0.5 } = {}) {
+    await ensureVisible(el);
+    const r = el.getBoundingClientRect();
+    const tx = r.left + r.width * x - 23, ty = r.top + r.height * y - 23;
+    if (!finger.classList.contains("show")) {
+      // Appear in place instead of flying in from the corner.
+      finger.style.transition = "none";
+      finger.style.transform = `translate(${tx}px, ${ty}px)`;
+      void finger.offsetWidth;
+      finger.style.transition = "";
+      finger.classList.add("show");
+      await wait(180);
+    } else {
+      finger.style.transform = `translate(${tx}px, ${ty}px)`;
+      await wait(reduceMotion.matches ? 60 : 480);
+    }
+  }
+
+  async function tap(el, opts) {
+    await moveFingerTo(el, opts);
+    finger.classList.remove("press");
+    void finger.offsetWidth;
+    finger.classList.add("press");
+    await wait(170);
+  }
+
+  async function swipe(track) {
+    await moveFingerTo(track, { x: 0.82, y: 0.5 });
+    finger.classList.add("hold");
+    const first = track.children[0];
+    const gap = parseFloat(getComputedStyle(track).columnGap) || 14;
+    track.scrollBy({ left: first.getBoundingClientRect().width + gap, behavior: smooth() });
+    await moveFingerTo(track, { x: 0.22, y: 0.5 });
+    finger.classList.remove("hold");
+  }
+
+  /* ---------- Actions: one function per data-auto value ---------- */
+  const actions = {
+    async click(el) {
+      say(`Tapping “${label(el)}”`);
+      await tap(el);
+      el.click();
+      await wait(1000);
+    },
+
+    async tabs(el) {
+      const tabs = $$('[role="tab"]', el);
+      for (const t of tabs.slice(1)) {
+        say(`Switching to “${label(t)}”`);
+        await tap(t);
+        t.click();
+        await wait(2600);
+      }
+    },
+
+    async accordion(el) {
+      for (const d of $$("details", el)) {
+        const s = $("summary", d);
+        say(`Opening “${label(s)}”`);
+        await tap(s);
+        d.open = true;
+        await wait(2000);
+      }
+    },
+
+    async type(el) {
+      const text = el.dataset.text || "hello";
+      say(`Typing “${text}”`);
+      await tap(el);
+      el.classList.add("is-typing");
+      el.value = "";
+      for (const ch of text) {
+        el.value += ch;
+        el.dispatchEvent(new Event("input", { bubbles: true }));
+        await wait(130 + Math.random() * 140);
+      }
+      await wait(2400);
+      el.classList.remove("is-typing");
+    },
+
+    async carousel(el) {
+      const track = $(".track", el) || el;
+      for (let i = 1; i < track.children.length; i++) {
+        say(`Swiping to card ${i + 1} of ${track.children.length}`);
+        await swipe(track);
+        await wait(1700);
+      }
+    },
+
+    async check(el) {
+      for (const box of $$('input[type="checkbox"]', el)) {
+        say(`Ticking “${label(box.closest("label") || box)}”`);
+        await tap(box);
+        if (!box.checked) box.click();
+        await wait(800);
+      }
+    }
+  };
+
+  async function runAction(el) {
+    const fn = actions[el.dataset.auto];
+    if (!fn) return;
+    const s = session;
+    busy = true;
+    try { await fn(el); }
+    catch (err) { if (!(err instanceof Cancelled)) console.error(err); }
+    finally {
+      if (s === session) {
+        busy = false;
+        finger.classList.remove("show", "press", "hold");
+        pos = window.scrollY;
+      }
+    }
+  }
+
+  function checkTargets() {
+    const line = innerHeight * TRIGGER_LINE;
+    for (const el of pending) {
+      const r = el.getBoundingClientRect();
+      if (r.bottom <= 0) { pending = pending.filter(x => x !== el); continue; }  // already scrolled past
+      if (r.top < line) {
+        pending = pending.filter(x => x !== el);
+        runAction(el);
+        return;
+      }
+    }
+  }
+
+  function resetPage() {
+    page.innerHTML = initialHTML;
+    pending = $$("[data-auto]", page);
+  }
+
+  async function atEnd() {
+    const s = session;
+    busy = true;
+    try {
+      if (!settings.loop) {
+        stop("Reached the end", "Start again");
+        return;
+      }
+      say("Reached the end. Starting over…");
+      await wait(2500);
+      window.scrollTo({ top: 0, behavior: smooth() });
+      for (let t = 0; t < 30 && window.scrollY > 2; t++) await wait(100);
+      window.scrollTo(0, 0);
+      resetPage();
+      pos = 0;
+      await wait(1200);
+    } catch (err) {
+      if (!(err instanceof Cancelled)) console.error(err);
+    } finally {
+      if (s === session) busy = false;
+    }
+  }
+
+  /* ---------- Main loop ---------- */
+  function frame(t) {
+    if (!running) return;
+    const dt = lastT ? Math.min((t - lastT) / 1000, 0.1) : 0;
+    lastT = t;
+    progress.style.transform = `scaleX(${maxScroll() ? window.scrollY / maxScroll() : 0})`;
+
+    if (!busy) {
+      const now = performance.now();
+      if (now < holdUntil) {
+        say(`Paused while you touch. Continuing in ${Math.ceil((holdUntil - now) / 1000)}`);
+        pos = window.scrollY;
+      } else {
+        say("Scrolling");
+        if (Math.abs(window.scrollY - pos) > 3) pos = window.scrollY;   // you scrolled by hand
+        const max = maxScroll();
+        pos = Math.min(pos + pxPerSecond() * dt, max);
+        window.scrollTo(0, pos);
+        if (settings.interact) checkTargets();
+        if (!busy && pos >= max - 1) atEnd();
+      }
+    }
+    raf = requestAnimationFrame(frame);
+  }
+
+  function start() {
+    if (running) return;
+    closeSheet();
+    keepAwake.on();   // called straight from the tap, which browsers require
+
+    if (window.scrollY >= maxScroll() - 1) {   // starting from the bottom: begin again from the top
+      window.scrollTo(0, 0);
+      resetPage();
+    }
+    running = true; session++; busy = false; lastT = 0; holdUntil = 0;
+    pos = window.scrollY;
+
+    startBtn.setAttribute("aria-pressed", "true");
+    startLabel.textContent = "Pause";
+    startIcon.innerHTML = ICON_PAUSE;
+    say("Scrolling");
+    raf = requestAnimationFrame(frame);
+  }
+
+  function stop(message = "Paused", buttonText = "Continue") {
+    running = false; session++; busy = false;
+    cancelAnimationFrame(raf);
+    keepAwake.off();
+    finger.classList.remove("show", "press", "hold");
+    $$(".is-typing", page).forEach(el => el.classList.remove("is-typing"));
+    startBtn.setAttribute("aria-pressed", "false");
+    startLabel.textContent = buttonText;
+    startIcon.innerHTML = ICON_PLAY;
+    say(message);
+  }
+
+  /* ---------- Controls ---------- */
+  startBtn.addEventListener("click", () => (running ? stop() : start()));
+
+  const speedNum = $("#speedNum");
+  function setLevel(n) { settings.level = Math.max(1, Math.min(10, n)); speedNum.textContent = settings.level; }
+  $("#slower").addEventListener("click", () => setLevel(settings.level - 1));
+  $("#faster").addEventListener("click", () => setLevel(settings.level + 1));
+
+  const sheet = $("#sheet"), settingsBtn = $("#settingsBtn");
+  function closeSheet() { sheet.hidden = true; settingsBtn.setAttribute("aria-expanded", "false"); }
+  settingsBtn.addEventListener("click", () => {
+    sheet.hidden = !sheet.hidden;
+    settingsBtn.setAttribute("aria-expanded", String(!sheet.hidden));
+  });
+  $("#optInteract").addEventListener("change", e => (settings.interact = e.target.checked));
+  $("#optLoop").addEventListener("change", e => (settings.loop = e.target.checked));
+  $("#optHold").addEventListener("change", e => (settings.holdOnTouch = e.target.checked));
+
+  const fsBtn = $("#fullscreen");
+  const root = document.documentElement;
+  const canFullscreen = document.fullscreenEnabled || document.webkitFullscreenEnabled;
+  if (canFullscreen) {
+    fsBtn.hidden = false;
+    fsBtn.addEventListener("click", () => {
+      const active = document.fullscreenElement || document.webkitFullscreenElement;
+      if (active) (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+      else (root.requestFullscreen || root.webkitRequestFullscreen).call(root);
+    });
+    const syncFs = () => {
+      fsBtn.textContent = (document.fullscreenElement || document.webkitFullscreenElement) ? "Leave full screen" : "Go full screen";
+    };
+    document.addEventListener("fullscreenchange", syncFs);
+    document.addEventListener("webkitfullscreenchange", syncFs);
+  }
+
+  // When you touch or scroll the page yourself, hold off for a few seconds.
+  function onUserInput(e) {
+    if (!running || !settings.holdOnTouch) return;
+    if (e.target && e.target.closest && e.target.closest("#dock")) return;
+    holdUntil = performance.now() + HOLD_MS;
+  }
+  ["touchstart", "touchmove", "wheel", "mousedown", "keydown"].forEach(type =>
+    addEventListener(type, onUserInput, { passive: true }));
+
+  /* ---------- Demo widgets (event delegation so they survive a page reset) ---------- */
+  function selectTab(tab) {
+    const list = tab.closest('[role="tablist"]');
+    $$('[role="tab"]', list).forEach(t => {
+      const on = t === tab;
+      t.setAttribute("aria-selected", String(on));
+      t.tabIndex = on ? 0 : -1;
+      const panel = document.getElementById(t.getAttribute("aria-controls"));
+      if (panel) panel.hidden = !on;
+    });
+  }
+
+  document.addEventListener("click", e => {
+    const tab = e.target.closest('[role="tab"]');
+    if (tab) selectTab(tab);
+
+    const read = e.target.closest("[data-read]");
+    if (read) {
+      const on = read.getAttribute("aria-pressed") !== "true";
+      read.setAttribute("aria-pressed", String(on));
+      read.textContent = on ? "Marked as read" : "Mark as read";
+    }
+  });
+
+  document.addEventListener("keydown", e => {
+    const tab = e.target.closest && e.target.closest('[role="tab"]');
+    if (!tab || (e.key !== "ArrowRight" && e.key !== "ArrowLeft")) return;
+    const tabs = $$('[role="tab"]', tab.closest('[role="tablist"]'));
+    const next = tabs[(tabs.indexOf(tab) + (e.key === "ArrowRight" ? 1 : -1) + tabs.length) % tabs.length];
+    selectTab(next);
+    next.focus();
+  });
+
+  document.addEventListener("input", e => {
+    const input = e.target;
+    if (!input.matches || !input.matches("[data-filter]")) return;
+    const list = document.getElementById(input.dataset.filter);
+    const q = input.value.trim().toLowerCase();
+    let hits = 0;
+    $$("li", list).forEach(li => {
+      const match = !q || li.textContent.toLowerCase().includes(q);
+      li.hidden = !match;
+      if (match) hits++;
+    });
+    const count = document.getElementById(input.dataset.filter + "-count");
+    const total = list.children.length;
+    if (count) count.textContent = q ? `${hits} of ${total} tips match “${input.value.trim()}”` : `${total} tips`;
+  });
+
+  keepAwake.render();
+})();
+</script>
+</body>
+</html>
