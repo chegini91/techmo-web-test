@@ -642,7 +642,7 @@
         <p>Chrome, Samsung Internet, Edge and Firefox can all keep the screen on for a web page. There’s nothing to set up. It works as soon as you press Start.</p>
       </div>
       <div role="tabpanel" id="panel-b" aria-labelledby="tab-b" hidden>
-        <p>Safari has supported this since iOS 16.4. On older versions, and in home screen apps, the page also plays a tiny silent video you can’t see, which keeps the screen awake the same way.</p>
+        <p>Safari has supported this since iOS 16.4. Chrome and other iPhone browsers, older iOS versions and home screen apps can quietly ignore it, so on iPhone and iPad the page also plays a tiny silent video you can’t see, which keeps the screen awake the same way.</p>
       </div>
       <div role="tabpanel" id="panel-c" aria-labelledby="tab-c" hidden>
         <p>Switching to another app or tab lets the screen sleep. When you come back, the page asks again on its own. Open it from an https:// address rather than a file saved on the phone, and if the status still says it can’t keep the screen on, set Auto-Lock (iPhone) or Screen timeout (Android) to a longer time.</p>
@@ -917,8 +917,9 @@
 
     async on() {
       this.wanted = true;
-      // Home-screen web apps on older iOS accept the wake lock but ignore it, so add the video too.
-      if (isIOS && navigator.standalone === true) this.playVideo();
+      // Chrome and other browsers on iOS, and home-screen web apps, can accept the wake lock but ignore it,
+      // so on iOS always run the video too. Start it before any await so it still counts as part of the tap.
+      if (isIOS) this.playVideo();
       if (this.lock && !this.lock.released) return;
 
       if ("wakeLock" in navigator && window.isSecureContext) {
