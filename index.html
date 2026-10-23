@@ -1017,8 +1017,8 @@
               note: "Just the page: scrolling, taps and animations." },
     medium: { name: "Medium", gpu: 24,  scale: .5,  workers: 2,     duty: .3,
               note: "Adds a light background shader and 2 CPU threads at 30%." },
-    heavy:  { name: "Heavy",  gpu: 64,  scale: .75, workers: cores, duty: .5,
-              note: `Adds a heavier shader and ${cores} CPU threads at 50%.` },
+    heavy:  { name: "Heavy",  gpu: 48,  scale: .5,  workers: 2,     duty: .6,
+              note: "Twice Medium: the shader does twice the work and 2 CPU threads run at 60%." },
     max:    { name: "Max",    gpu: 128, scale: 1,   workers: cores, duty: 1,
               note: `Full-resolution shader and ${cores} CPU threads at 100%. The phone will get hot and may slow down.` }
   };
