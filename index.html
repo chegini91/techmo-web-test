@@ -291,6 +291,16 @@
   .toggle { display: flex; align-items: center; gap: 12px; padding: 9px 0; cursor: pointer; }
   .toggle input { width: 22px; height: 22px; margin: 0; flex: none; accent-color: var(--teal); }
   .sheet .btn { margin-top: 8px; padding: 9px 16px; font-size: .95rem; }
+  .load { margin: 0 0 6px; padding: 0 0 10px; border: 0; border-bottom: 1px solid var(--line); }
+  .load legend { padding: 0; margin-bottom: 8px; font-weight: 700; }
+  .seg { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .seg label { position: relative; cursor: pointer; }
+  .seg input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+  .seg span { display: block; padding: 8px 4px; text-align: center; font-weight: 600; font-size: .9rem; }
+  .seg label + label span { border-left: 1px solid var(--line); }
+  .seg input:checked + span { background: var(--ink); color: var(--paper); }
+  .seg input:focus-visible + span { outline: 3px solid var(--teal); outline-offset: -3px; }
+  .load-note { margin: 8px 0 0; font-size: .8rem; color: var(--muted); }
 
   /* ---------- Ghost finger ---------- */
   .finger {
@@ -588,6 +598,13 @@
   @keyframes shake { 20% { translate: -7px; } 40% { translate: 6px; } 60% { translate: -4px; } 80% { translate: 2px; } }
   .quiz-result { min-height: 1.6em; margin: 6px 2px 0; font-weight: 700; }
 
+  /* Workload: a shader drawn behind the page while the autopilot runs */
+  #loadGpu {
+    position: fixed; inset: 0; z-index: -1;
+    width: 100%; height: 100%; pointer-events: none;
+    opacity: 0; transition: opacity .6s;
+  }
+  #loadGpu.on { opacity: .12; }
   #confetti { position: fixed; inset: 0; z-index: 25; width: 100%; height: 100%; pointer-events: none; }
 
   @media (prefers-reduced-motion: reduce) {
@@ -601,6 +618,8 @@
 </style>
 </head>
 <body>
+
+<canvas id="loadGpu" aria-hidden="true"></canvas>
 
 <header class="hero">
   <h1>This page scrolls and taps <span class="hl">by itself.</span></h1>
@@ -836,6 +855,16 @@
   <div class="progress" id="progress"></div>
 
   <div class="sheet" id="sheet" hidden>
+    <fieldset class="load">
+      <legend>Workload</legend>
+      <div class="seg">
+        <label><input type="radio" name="load" value="light"><span>Light</span></label>
+        <label><input type="radio" name="load" value="medium" checked><span>Medium</span></label>
+        <label><input type="radio" name="load" value="heavy"><span>Heavy</span></label>
+        <label><input type="radio" name="load" value="max"><span>Max</span></label>
+      </div>
+      <p class="load-note" id="loadNote"></p>
+    </fieldset>
     <label class="toggle"><input type="checkbox" id="optInteract" checked><span>Tap, type and swipe on the page</span></label>
     <label class="toggle"><input type="checkbox" id="optLoop" checked><span>Start over at the end</span></label>
     <label class="toggle"><input type="checkbox" id="optHold" checked><span>Pause while I touch the screen</span></label>
@@ -854,7 +883,7 @@
     </button>
     <div class="speed" role="group" aria-label="Scroll speed">
       <button id="slower" aria-label="Slower">&minus;</button>
-      <output id="speedOut" aria-live="polite"><b id="speedNum">3</b><small>speed</small></output>
+      <output id="speedOut" aria-live="polite"><b id="speedNum">5</b><small>speed</small></output>
       <button id="faster" aria-label="Faster">+</button>
     </div>
     <button class="icon-btn" id="settingsBtn" aria-expanded="false" aria-controls="sheet" aria-label="Settings">
@@ -881,7 +910,7 @@
   const ICON_PLAY = '<path d="M7 4.5v15l12.5-7.5z"/>';
   const ICON_PAUSE = '<path d="M6.5 4.5h4v15h-4zM13.5 4.5h4v15h-4z"/>';
 
-  const settings = { interact: true, loop: true, holdOnTouch: true, level: 3 };
+  const settings = { interact: true, loop: true, holdOnTouch: true, level: 5 };
   const pxPerSecond = () => 14 * settings.level;   // level 1–10
   const HOLD_MS = 3000;                              // pause after the user touches
   const TRIGGER_LINE = 0.45;                         // act when an element reaches 45% down the screen
@@ -976,7 +1005,159 @@
 
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible" && keepAwake.wanted) keepAwake.on();
+    if (document.visibilityState === "hidden") workload.stop();
+    else if (running) workload.start();
   });
+
+  /* ---------- Workload: extra GPU and CPU work for battery tests ---------- */
+  // Fixed levels so runs are repeatable. Light is the page on its own (the baseline).
+  const cores = Math.max(1, (navigator.hardwareConcurrency || 4) - 1);   // leave one core for the page
+  const LOADS = {
+    light:  { name: "Light",  gpu: 0,   scale: 0,   workers: 0,     duty: 0,
+              note: "Just the page: scrolling, taps and animations." },
+    medium: { name: "Medium", gpu: 24,  scale: .5,  workers: 2,     duty: .3,
+              note: "Adds a light background shader and 2 CPU threads at 30%." },
+    heavy:  { name: "Heavy",  gpu: 64,  scale: .75, workers: cores, duty: .5,
+              note: `Adds a heavier shader and ${cores} CPU threads at 50%.` },
+    max:    { name: "Max",    gpu: 128, scale: 1,   workers: cores, duty: 1,
+              note: `Full-resolution shader and ${cores} CPU threads at 100%. The phone will get hot and may slow down.` }
+  };
+
+  const workload = {
+    mode: "medium", active: false, workers: [], raf: 0, gl: null, prog: null, uRes: null, uTime: null, uIter: null,
+    canvas: $("#loadGpu"),
+
+    get level() { return LOADS[this.mode]; },
+
+    set(mode) {
+      this.mode = mode;
+      if (this.active) { this.stop(); this.start(); }
+    },
+
+    start() {
+      if (this.active) return;
+      this.active = true;
+      const L = this.level;
+
+      // CPU: each worker is busy for `duty` of every 100 ms
+      const src = `onmessage = e => {
+        const duty = e.data, period = 100; let x = 1;
+        (function cycle() {
+          const end = performance.now() + duty * period;
+          while (performance.now() < end) for (let i = 0; i < 5000; i++) x = Math.sqrt(x * x + i) % 1e6;
+          setTimeout(cycle, (1 - duty) * period);
+        })();
+      };`;
+      if (L.workers && "Worker" in window) {
+        const url = URL.createObjectURL(new Blob([src], { type: "text/javascript" }));
+        for (let i = 0; i < L.workers; i++) {
+          const w = new Worker(url);
+          w.postMessage(L.duty);
+          this.workers.push(w);
+        }
+        URL.revokeObjectURL(url);
+      }
+
+      // GPU: a noise shader whose cost grows with the number of loop steps
+      if (L.gpu && this.initGl()) {
+        this.resize();
+        this.canvas.classList.add("on");
+        const draw = t => {
+          if (!this.active) return;
+          const gl = this.gl;
+          gl.uniform1f(this.uTime, t / 1000);
+          gl.drawArrays(gl.TRIANGLES, 0, 3);
+          this.raf = requestAnimationFrame(draw);
+        };
+        this.raf = requestAnimationFrame(draw);
+      }
+    },
+
+    stop() {
+      this.active = false;
+      cancelAnimationFrame(this.raf);
+      this.workers.forEach(w => w.terminate());
+      this.workers = [];
+      this.canvas.classList.remove("on");
+    },
+
+    resize() {
+      if (!this.gl || !this.level.gpu) return;
+      const k = (window.devicePixelRatio || 1) * this.level.scale;
+      this.canvas.width = Math.max(1, Math.round(innerWidth * k));
+      this.canvas.height = Math.max(1, Math.round(innerHeight * k));
+      this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+      this.gl.uniform2f(this.uRes, this.canvas.width, this.canvas.height);
+      this.gl.uniform1i(this.uIter, this.level.gpu);
+    },
+
+    initGl() {
+      if (this.gl) return true;
+      const gl = this.canvas.getContext("webgl", { antialias: false, depth: false, alpha: false });
+      if (!gl) { console.warn("WebGL is not available, so the workload runs on the CPU only."); return false; }
+      const vs = "attribute vec2 p; void main() { gl_Position = vec4(p, 0.0, 1.0); }";
+      const fs = `
+        #ifdef GL_FRAGMENT_PRECISION_HIGH
+        precision highp float;
+        #else
+        precision mediump float;
+        #endif
+        uniform vec2 res; uniform float time; uniform int iter;
+        float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+        float noise(vec2 p) {
+          vec2 i = floor(p), f = fract(p);
+          f = f * f * (3.0 - 2.0 * f);
+          return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x),
+                     mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y);
+        }
+        void main() {
+          vec2 p = gl_FragCoord.xy / res.y * 3.0;
+          float v = 0.0;
+          for (int i = 0; i < 256; i++) {
+            if (i >= iter) break;
+            float k = noise(p * 1.7 + time * 0.1);
+            p += vec2(cos(k * 6.2832), sin(k * 6.2832)) * 0.15;
+            v += k;
+          }
+          v /= float(iter);
+          gl_FragColor = vec4(mix(vec3(0.39, 0.58, 0.95), vec3(0.81, 0.89, 1.0), v), 1.0);
+        }`;
+      const shader = (type, code) => {
+        const sh = gl.createShader(type);
+        gl.shaderSource(sh, code);
+        gl.compileShader(sh);
+        if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(sh));
+        return sh;
+      };
+      try {
+        const prog = gl.createProgram();
+        gl.attachShader(prog, shader(gl.VERTEX_SHADER, vs));
+        gl.attachShader(prog, shader(gl.FRAGMENT_SHADER, fs));
+        gl.linkProgram(prog);
+        if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog));
+        gl.useProgram(prog);
+        gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);   // one triangle covers the screen
+        const loc = gl.getAttribLocation(prog, "p");
+        gl.enableVertexAttribArray(loc);
+        gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+        this.uRes = gl.getUniformLocation(prog, "res");
+        this.uTime = gl.getUniformLocation(prog, "time");
+        this.uIter = gl.getUniformLocation(prog, "iter");
+        this.gl = gl;
+        this.canvas.addEventListener("webglcontextlost", e => { e.preventDefault(); cancelAnimationFrame(this.raf); });
+        this.canvas.addEventListener("webglcontextrestored", () => {
+          this.gl = null;
+          if (this.active) { this.stop(); this.start(); }
+        });
+        return true;
+      } catch (err) {
+        console.warn("Workload shader failed, so the workload runs on the CPU only:", err);
+        return false;
+      }
+    }
+  };
+  addEventListener("resize", () => workload.resize());
 
   /* ---------- Ghost finger ---------- */
   async function ensureVisible(el) {
@@ -1259,7 +1440,7 @@
         say(`Paused while you touch. Continuing in ${Math.ceil((holdUntil - now) / 1000)}`);
         pos = window.scrollY;
       } else {
-        say("Scrolling");
+        say(`Scrolling, ${workload.level.name.toLowerCase()} load`);
         if (Math.abs(window.scrollY - pos) > 3) pos = window.scrollY;   // you scrolled by hand
         const max = maxScroll();
         pos = Math.min(pos + pxPerSecond() * dt, max);
@@ -1286,7 +1467,8 @@
     startBtn.setAttribute("aria-pressed", "true");
     startLabel.textContent = "Pause";
     startIcon.innerHTML = ICON_PAUSE;
-    say("Scrolling");
+    say(`Scrolling, ${workload.level.name.toLowerCase()} load`);
+    workload.start();
     raf = requestAnimationFrame(frame);
   }
 
@@ -1294,6 +1476,7 @@
     running = false; session++; busy = false;
     cancelAnimationFrame(raf);
     keepAwake.off();
+    workload.stop();
     finger.classList.remove("show", "press", "hold");
     $$(".is-typing", page).forEach(el => el.classList.remove("is-typing"));
     $$(".lifted", page).forEach(el => el.classList.remove("lifted"));
@@ -1320,6 +1503,15 @@
   $("#optInteract").addEventListener("change", e => (settings.interact = e.target.checked));
   $("#optLoop").addEventListener("change", e => (settings.loop = e.target.checked));
   $("#optHold").addEventListener("change", e => (settings.holdOnTouch = e.target.checked));
+
+  const loadNote = $("#loadNote");
+  function setLoad(mode) {
+    workload.set(mode);
+    loadNote.textContent = workload.level.note;
+    if (running && !busy) say(`Scrolling, ${workload.level.name.toLowerCase()} load`);
+  }
+  $$('input[name="load"]').forEach(r => r.addEventListener("change", e => setLoad(e.target.value)));
+  setLoad($('input[name="load"]:checked').value);
 
   const fsBtn = $("#fullscreen");
   const root = document.documentElement;
