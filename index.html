@@ -1011,21 +1011,26 @@
 
   /* ---------- Workload: extra GPU and CPU work for battery tests ---------- */
   // Fixed levels so runs are repeatable. Light is the page on its own (the baseline).
+  // Light, Medium and Heavy do the same work on every phone: the shader draws a fixed number of pixels
+  // at a fixed frame rate, and each CPU thread does a fixed number of work units every 100 ms.
+  // A slower or less efficient phone takes longer to do that work, which shows up as a higher busy %.
+  // Max is different: it runs everything the phone has flat out, so it is not comparable across phones.
   const cores = Math.max(1, (navigator.hardwareConcurrency || 4) - 1);   // leave one core for the page
+  const FPS = 60;   // shader frames per second, so 120 Hz screens don't draw twice as often
   const LOADS = {
-    light:  { name: "Light",  gpu: 0,   scale: 0,   workers: 0,     duty: 0,
+    light:  { name: "Light",  gpu: 0,   pixels: 0,      workers: 0,     work: 0,    duty: 0,
               note: "Just the page: scrolling, taps and animations." },
-    medium: { name: "Medium", gpu: 24,  scale: .5,  workers: 2,     duty: .3,
-              note: "Adds a light background shader and 2 CPU threads at 30%." },
-    heavy:  { name: "Heavy",  gpu: 48,  scale: .5,  workers: 2,     duty: .6,
-              note: "Twice Medium: the shader does twice the work and 2 CPU threads run at 60%." },
-    max:    { name: "Max",    gpu: 128, scale: 1,   workers: cores, duty: 1,
-              note: `Full-resolution shader and ${cores} CPU threads at 100%. The phone will get hot and may slow down.` }
+    medium: { name: "Medium", gpu: 24,  pixels: 100000, workers: 2,     work: 500,  duty: 0,
+              note: "Adds a light background shader and 2 CPU threads, the same amount of work on every phone." },
+    heavy:  { name: "Heavy",  gpu: 48,  pixels: 100000, workers: 2,     work: 1000, duty: 0,
+              note: "Twice Medium: the shader and the 2 CPU threads do twice the work." },
+    max:    { name: "Max",    gpu: 128, pixels: 0,      workers: cores, work: 0,    duty: 1,
+              note: `Full-resolution shader and ${cores} CPU threads at 100%. The phone will get hot and may slow down. Not comparable between phones.` }
   };
 
   const workload = {
     mode: "medium", active: false, workers: [], raf: 0, gl: null, prog: null, uRes: null, uTime: null, uIter: null,
-    canvas: $("#loadGpu"),
+    canvas: $("#loadGpu"), busy: [], frames: 0, since: 0, fps: 0, onStats: null,
 
     get level() { return LOADS[this.mode]; },
 
@@ -1039,20 +1044,29 @@
       this.active = true;
       const L = this.level;
 
-      // CPU: each worker is busy for `duty` of every 100 ms
+      this.busy = []; this.frames = 0; this.fps = 0; this.since = performance.now();
+
+      // CPU: every 100 ms each worker does `work` units (about 30 ms per 500 on an Apple M4 core),
+      // or with `duty` set, stays busy for that share of the time instead. It reports how busy it was.
       const src = `onmessage = e => {
-        const duty = e.data, period = 100; let x = 1;
+        const { work, duty } = e.data, period = 100; let x = 1, busy = 0, since = performance.now();
+        const unit = () => { for (let i = 0; i < 5000; i++) x = Math.sqrt(x * x + i) % 1e6; };
         (function cycle() {
-          const end = performance.now() + duty * period;
-          while (performance.now() < end) for (let i = 0; i < 5000; i++) x = Math.sqrt(x * x + i) % 1e6;
-          setTimeout(cycle, (1 - duty) * period);
+          const start = performance.now();
+          if (duty) { const end = start + duty * period; while (performance.now() < end) unit(); }
+          else for (let n = 0; n < work; n++) unit();
+          const now = performance.now();
+          busy += now - start;
+          if (now - since >= 2000) { postMessage(busy / (now - since)); busy = 0; since = now; }
+          setTimeout(cycle, Math.max(0, period - (now - start)));
         })();
       };`;
       if (L.workers && "Worker" in window) {
         const url = URL.createObjectURL(new Blob([src], { type: "text/javascript" }));
         for (let i = 0; i < L.workers; i++) {
           const w = new Worker(url);
-          w.postMessage(L.duty);
+          w.onmessage = e => { this.busy[i] = e.data; this.report(); };
+          w.postMessage({ work: L.work, duty: L.duty });
           this.workers.push(w);
         }
         URL.revokeObjectURL(url);
@@ -1062,11 +1076,16 @@
       if (L.gpu && this.initGl()) {
         this.resize();
         this.canvas.classList.add("on");
+        let next = 0;
         const draw = t => {
           if (!this.active) return;
-          const gl = this.gl;
-          gl.uniform1f(this.uTime, t / 1000);
-          gl.drawArrays(gl.TRIANGLES, 0, 3);
+          if (t >= next - 2) {   // skip frames above FPS; the 2 ms slack absorbs timer jitter
+            next = Math.max(next + 1000 / FPS, t);   // don't try to catch up after a stall
+            const gl = this.gl;
+            gl.uniform1f(this.uTime, t / 1000);
+            gl.drawArrays(gl.TRIANGLES, 0, 3);
+            this.frames++;
+          }
           this.raf = requestAnimationFrame(draw);
         };
         this.raf = requestAnimationFrame(draw);
@@ -1081,9 +1100,23 @@
       this.canvas.classList.remove("on");
     },
 
+    // Shader size, frame rate and CPU busy % so runs on different phones can be checked against each other
+    report() {
+      if (!this.onStats) return;
+      // Workers report a few ms apart, so only measure the frame rate over at least a second
+      const secs = (performance.now() - this.since) / 1000;
+      if (secs >= 1) { this.fps = Math.round(this.frames / secs); this.frames = 0; this.since = performance.now(); }
+      const parts = [];
+      if (this.gl && this.level.gpu && this.fps) parts.push(`Shader ${this.canvas.width}×${this.canvas.height} at ${this.fps} fps`);
+      if (this.busy.length) parts.push(`CPU threads busy ${this.busy.map(b => Math.round(b * 100) + "%").join(", ")}`);
+      this.onStats(parts.join(". "));
+    },
+
     resize() {
       if (!this.gl || !this.level.gpu) return;
-      const k = (window.devicePixelRatio || 1) * this.level.scale;
+      // A fixed pixel count keeps the work the same on every screen; with none set, draw at full resolution
+      const P = this.level.pixels;
+      const k = P ? Math.sqrt(P / (innerWidth * innerHeight)) : (window.devicePixelRatio || 1);
       this.canvas.width = Math.max(1, Math.round(innerWidth * k));
       this.canvas.height = Math.max(1, Math.round(innerHeight * k));
       this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
@@ -1505,6 +1538,7 @@
   $("#optHold").addEventListener("change", e => (settings.holdOnTouch = e.target.checked));
 
   const loadNote = $("#loadNote");
+  workload.onStats = stats => { loadNote.textContent = workload.level.note + (stats ? ` ${stats}.` : ""); };
   function setLoad(mode) {
     workload.set(mode);
     loadNote.textContent = workload.level.note;
